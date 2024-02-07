@@ -77,8 +77,8 @@ const create_frame = (name, src, width, height) => create_control(name, Control,
         const overlay = document.createElement("div");
         overlay.style = `
             position: absolute;
-            width: ${width}px;
-            height: ${height * 0.8}px;
+            width: 100%;
+            height: 75%;
             z-index: 1;
         `;
         const frame = document.createElement("iframe");
