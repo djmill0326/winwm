@@ -1,10 +1,8 @@
 const create_object = (name, proto={}) => ({ ...proto, name });
 
 const Control = create_object("Control", {
-    children: [],
-    init: (ctx) => {},
-    update: (ctx) => {},
-    draw: (ctx) => {}
+    children: null,
+    init: (ctx) => console.warn("tried to initialize a control with no initialization code")
 });
 
 const create_control = (name, proto=Control, hooks={}) => create_object(name, { ...proto, ...hooks });
@@ -68,7 +66,6 @@ const create_toolbar = (title) => create_control("Toolbar", Control, {
                 let offsety = ev.clientY - prev_mousey;
                 ctx.root.attributeStyleMap.set("left", prev_x + offsetx + "px");
                 ctx.root.attributeStyleMap.set("top", prev_y + offsety + "px");
-                console.log(offsetx, offsety);
             }
         });
 
@@ -131,26 +128,26 @@ const init_barebones = (ctx) => {
 const init_children = (ctx) => {
     ctx.control.children.forEach(ctl => {
         const ctx_sub = create_ctx(ctx.name = "/" + ctl.name, ctl, ctx.element);
-        run_ctx(ctx_sub);
+        run(ctx_sub);
     });
 };
 
-const run_ctx = (ctx) => {
+const run = (ctx) => {
     init_barebones(ctx);
     init_children(ctx);
 };
 
-const init = (root) => {
-    const x = Math.max(centered(800, root.clientWidth), 0);
-    const y = Math.max(centered(600, root.clientHeight), 0);
-    
-    const wm_root = create_window("John's iMac", x, y, 800, 600);
-    
-    const wm_hello = create_window("Welcome to John's iMac Webserver!", centered(320, 800), centered(240, 600), 320, 240);
-    add_control(wm_hello, wm_root);
-
-    const ctx = create_ctx("Root", wm_root, root);
-    run_ctx(ctx);
+const create_program = (name, root, cb, width=800, height=600) => {
+    const x = Math.max(centered(width, root.clientWidth), 0);
+    const y = Math.max(centered(height, root.clientHeight), 0);
+    return create_ctx(name, cb(x, y), root);
 };
 
-init(document.body);
+const ctx = create_program("Root", document.body, (x, y) => {
+    const wm_root = create_window("John's iMac", x, y, 800, 600);
+    const wm_hello = create_window("Welcome to John's iMac Webserver!", centered(320, 800), centered(240, 600), 320, 240);
+    add_control(wm_hello, wm_root);
+    return wm_root;
+});
+
+run(ctx);
