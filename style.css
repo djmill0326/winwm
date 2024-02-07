@@ -15,10 +15,32 @@ body {
     display: flex;
     flex-direction: column;
     user-select: none;
+    transition: all 66.67ms ease-in;
 }
 
 .wm .shadow {
-    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));
+}
+
+.wm.button, .wm.menubar {
+    outline: none;
+    border: 3px outset #ccc;
+    background: #ddd;
+    color: #333;
+    padding: 0 2px;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.wm.button:hover, .wm.menubar:hover {
+    color: #000;
+}
+
+.wm.button:active, .wm.menubar:active {
+    background: #ddd;
+    color: #000;
+    filter: none;
+    border: 3px inset #ccc;
 }
 
 .wm.window {
@@ -49,23 +71,40 @@ body {
 }
 
 .wm.toolbar .button {
-    outline: none;
     border: none;
     border-left: 3px outset #ccc;
     background: #f11;
     color: #fff;
     padding: 0 8px;
-    margin: 0;
+    transition: all 66.67ms ease-in;
+    opacity: 1;
 }
 
 .wm.toolbar .button:hover {
-    background: #c33;
+    opacity: 0.9;
 }
 
 .wm.toolbar .button:active {
-    color: #ccc;
+    color: #f11;
     border-left: none;
     outline: 3px inset #ccc;
+    opacity: 0.95;
+}
+
+.wm.menubar {
+    flex-direction: row;
+}
+
+.wm.menubar .button {
+    flex-grow: 100;
+    border: none;
+}
+
+.wm.desktop {
+    padding: 4px;
+    border: 3px inset #ccc;
+    border-top: none;
+    flex-grow: 100;
 }
 
 .wm.desktop-icon {
@@ -78,7 +117,7 @@ body {
 }
 
 .wm.desktop-icon:hover img {
-    filter: drop-shadow(4px 4px 6px rgba(0,0,0,0.5));
+    filter: drop-shadow(4px 4px 6px rgba(0,0,0,0.4));
 }
 
 .wm.desktop-icon:active img {

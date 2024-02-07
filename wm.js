@@ -1,4 +1,7 @@
 import { wm, add_control, add_hook, Control } from "./controls.js";
+import { create_file_selector, create_menu_bar } from "./fs.js";
+import GL from "./gl.js";
+window.GL = GL;
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=()=>{}) => wm.Control(name, Control, {
     children: [],
@@ -61,6 +64,8 @@ export default {
     Ctx: create_ctx,
     Window: create_window,
     Program: create_program,
+    FileSelector: create_file_selector,
+    MenuBar: create_menu_bar,
     run: run,
     util: {
         centered
@@ -115,6 +120,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             open_programs.add("wm_hello");
         }
     });
+    add_control(create_menu_bar(), wm_root);
     add_control(wm_desktop, wm_root);
     return wm_root;
 });

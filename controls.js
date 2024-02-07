@@ -70,6 +70,35 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
     }
 });
 
+const pad_two = (x, add="0") => {
+    const str = x.toString();
+    return str.length === 1 ? add + str : str.substr(0, 2);
+}
+
+const daily_ms = 1000 * 60 * 60 * 24;
+export const create_clock = (cb) => create_control("Clock", Control, {
+    children: [],
+    update: (ctx) => {
+        const sec = Math.floor(Date.now() % daily_ms / 1000);
+        const min = Math.floor(sec / 60);
+        const hr = Math.floor(min / 60);
+        const str_sec = pad_two(sec % 60);
+        const str_min = pad_two(min % 60);
+        const str_hr = pad_two(hr % 24);
+        const str_hr_loc = str_hr > 12 ? "PM" : "AM";
+        ctx.element.innerText = `${str_hr%12}:${str_min}:${str_sec} ${str_hr_loc}`;
+    },
+    init: (ctx) => {
+        const root = document.createElement("span");
+        root.className = "wm clock";
+
+        ctx.element = root;
+        ctx.root.append(root);
+        ctx.control.update(ctx);
+        setInterval(() => ctx.control.update(ctx), 1000);
+    }
+});
+
 export const create_frame = (name, src, width, height) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
@@ -110,6 +139,7 @@ export const wm = {
     Control: create_control,
     Button: create_button,
     Toolbar: create_toolbar,
+    Clock: create_clock,
     Frame: create_frame,
     add_control, add_hook
 }
