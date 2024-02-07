@@ -51,6 +51,7 @@ body {
     flex-direction: column;
     background: #eee;
     filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
+    opacity: 0.8;
 }
 
 .wm.toolbar {
@@ -127,4 +128,8 @@ body {
 .wm.desktop-icon a {
     width: 100%;
     text-align: center;
+}
+
+.wm.window.focus {
+    opacity: 1;
 }

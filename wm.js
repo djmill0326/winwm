@@ -5,6 +5,7 @@ window.GL = GL;
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=()=>{}) => wm.Control(name, Control, {
     children: [],
+    hooks: ["click"],
     init: (ctx) => {
         const root = document.createElement("div");
         root.style = `
@@ -17,6 +18,13 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
         root.className = "wm window shadow";
         ctx.element = root;
         add_control(wm.Toolbar(name, ctx.control, can_close), ctx.control, true);
+
+        ctx.control.hooks.forEach(hook => {
+            root.addEventListener(hook, (ev) => {
+                hooks[hook].forEach(cb => cb(ctx, ev))
+            });
+        });
+
         cb(ctx);
         ctx.root.append(root);
     },
@@ -45,6 +53,26 @@ const init_children = (ctx) => {
     });
 };
 
+const global_focus = {
+    element: [],
+    z: 1,
+    in_flight: []
+};
+
+const focus_window = (ctx) => {
+    ctx.element.attributeStyleMap.set("z-index", global_focus.z);
+    global_focus.in_flight.push(ctx.element);
+    if (global_focus.in_flight.length !== 1) return;
+    setTimeout(() => {
+        global_focus.z += 1;
+        global_focus.element.forEach(el => el.classList.toggle("focus"));
+        global_focus.element = global_focus.in_flight;
+        global_focus.element.forEach(el => el.classList.toggle("focus"));
+        global_focus.in_flight = [];
+    }, 20);
+    
+}
+
 export const run = (ctx) => {
     if(ctx.element) return;
     init_barebones(ctx);
@@ -72,6 +100,12 @@ export default {
     }
 };
 
+const hooks = {};
+const add_global_hook = (hook, cb) => {
+    if(!hooks[hook]) hooks[hook] = [];
+    hooks[hook].push(cb);
+};
+
 let first_run = true;
 const ctx = create_program("Root", document.body, (x, y, w, h) => {
     const program_list = {
@@ -81,6 +115,8 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
     };
     const programs = {};
     const open_programs = new Set();
+
+    add_global_hook("click", focus_window);
     
     const wm_root = create_window("John's iMac - Desktop", x, y, w, h, false);
     const wm_desktop = wm.Control("Desktop", Control, {
@@ -106,7 +142,9 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
 
                 container.addEventListener("click", () => {
                     if (open_programs.has(name)) return;
-                    run(programs[name]());
+                    const prog = programs[name]();
+                    run(prog);
+                    focus_window(prog);
                     open_programs.add(name);
                 });
 
@@ -125,4 +163,5 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
     return wm_root;
 });
 run(ctx);
+focus_window(ctx);
 first_run = false;
