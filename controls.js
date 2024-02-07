@@ -85,7 +85,7 @@ export const create_clock = (cb) => create_control("Clock", Control, {
         const str_sec = pad_two(sec % 60);
         const str_min = pad_two(min % 60);
         const str_hr = pad_two(hr % 24);
-        const str_hr_loc = str_hr > 12 ? "PM" : "AM";
+        const str_hr_loc = str_hr >= 12 ? "PM" : "AM";
         ctx.element.innerText = `${str_hr%12}:${str_min}:${str_sec} ${str_hr_loc}`;
     },
     init: (ctx) => {

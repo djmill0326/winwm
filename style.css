@@ -58,13 +58,17 @@ body {
     display: flex;
     flex-direction: row;
     background: rgb(2,0,36);
-    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(36,63,121,1) 35%, rgba(63,212,240,1) 100%);
     color: white;
     font-size: 12px;
     padding-left: 4px;
     font-weight: bold;
     user-select: none;
     border-bottom: 3px outset #ccc;
+}
+
+.wm.focus > .toolbar {
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,36,121,1) 35%, rgba(9,212,255,1) 100%);
 }
 
 .wm.toolbar .title {
