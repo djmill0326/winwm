@@ -59,6 +59,7 @@ export const create_program = (name, root, cb, width=800, height=600) => {
 export default {
     ...wm,
     Ctx: create_ctx,
+    Window: create_window,
     Program: create_program,
     run: run,
     util: {
