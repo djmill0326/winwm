@@ -22,7 +22,7 @@ const create_button = (name, onclick) => create_control("Button", Control, {
     }
 });
 
-const create_toolbar = (title) => create_control("Toolbar", Control, {
+const create_toolbar = (title, can_close=true) => create_control("Toolbar", Control, {
     children: [],
     init: (ctx) => {
         if(ctx.element) {
@@ -37,12 +37,14 @@ const create_toolbar = (title) => create_control("Toolbar", Control, {
         root.append(name);
         ctx.element = root;
 
-        // toolbar close button
-        add_control(create_button("x", () => { 
-            // fixme: this is not correct at all
-            ctx.root.remove(); 
-            delete ctx.control;
-        }), ctx.control);
+        if(can_close) {
+            // toolbar close button
+            add_control(create_button("x", () => { 
+                // fixme: this is not correct at all
+                ctx.root.remove(); 
+                delete ctx.control;
+            }), ctx.control);
+        }
 
         // window movement handling (i don't trust that performance scales on this)
         let prev_x = null;
@@ -73,7 +75,7 @@ const create_toolbar = (title) => create_control("Toolbar", Control, {
     }
 });
 
-const create_window = (name, x=0, y=0, width=800, height=600, hooks={}) => create_control(name, Control, {
+const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, hooks={}) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
         if (ctx.element) {
@@ -90,7 +92,7 @@ const create_window = (name, x=0, y=0, width=800, height=600, hooks={}) => creat
         `;
         root.className = "wm window";
         ctx.element = root;
-        add_control(create_toolbar(name), ctx.control);
+        add_control(create_toolbar(name, can_close), ctx.control);
         ctx.root.append(root);
     },
     dimensions: (ctx) => ({ 
@@ -127,7 +129,7 @@ const init_barebones = (ctx) => {
 
 const init_children = (ctx) => {
     ctx.control.children.forEach(ctl => {
-        const ctx_sub = create_ctx(ctx.name = "/" + ctl.name, ctl, ctx.element);
+        const ctx_sub = create_ctx(ctx.name = "::" + ctl.name, ctl, ctx.element);
         run(ctx_sub);
     });
 };
@@ -144,7 +146,7 @@ const create_program = (name, root, cb, width=800, height=600) => {
 };
 
 const ctx = create_program("Root", document.body, (x, y) => {
-    const wm_root = create_window("John's iMac", x, y, 800, 600);
+    const wm_root = create_window("John's iMac", x, y, 800, 600, false);
     const wm_hello = create_window("Welcome to John's iMac Webserver!", centered(320, 800), centered(240, 600), 320, 240);
     add_control(wm_hello, wm_root);
     return wm_root;
