@@ -1,0 +1,62 @@
+body {
+    width: 100vw!important;
+    height: 100vh!important;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    background: rgb(2,0,36);
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);
+    overflow: hidden;
+}
+
+.wm {
+    box-sizing: border-box;
+}
+
+.wm.window {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 16px;
+    border: 3px outset #ccc;
+    border-radius: 1px;
+    display: flex;
+    flex-direction: column;
+    background: #eee;
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
+}
+
+.wm.toolbar {
+    display: flex;
+    flex-direction: row;
+    background: rgb(2,0,36);
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);
+    color: white;
+    font-size: 12px;
+    padding-left: 4px;
+    font-weight: bold;
+    user-select: none;
+    border-bottom: 3px outset #ccc;
+}
+
+.wm.toolbar .title {
+    flex-grow: 100;
+}
+
+.wm.toolbar .button {
+    outline: none;
+    border: none;
+    border-left: 3px outset #ccc;
+    background: #f11;
+    color: #fff;
+    padding: 0 8px;
+    margin: 0;
+}
+
+.wm.toolbar .button:hover {
+    background: #c33;
+}
+
+.wm.toolbar .button:active {
+    color: #ccc;
+    border-left: none;
+    outline: 3px inset #ccc;
+}
