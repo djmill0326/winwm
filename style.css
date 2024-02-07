@@ -75,6 +75,12 @@ body {
     flex-grow: 100;
 }
 
+.wm.focus > .toolbar .title::after {
+    content: "💯";
+    display: contents;
+    margin-left: 2px;
+}
+
 .wm.toolbar .button {
     border: none;
     border-left: 3px outset #ccc;

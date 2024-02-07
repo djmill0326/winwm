@@ -122,6 +122,42 @@ export const create_frame = (name, src, width, height) => create_control(name, C
     }
 });
 
+const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
+    children: [],
+    update: (ctx) => {
+        if(!ctx.src) return;
+        fetch(ctx.src, {
+            mode: "no-cors",
+            method: "GET",
+            headers: {
+
+            },
+        }).then(res => res.text()).then(text => {
+            ctx.element.innerHTML = text;
+        });
+    },
+    init: (ctx) => {
+        const root = document.createElement("div");
+        const shadow = root.attachShadow({ mode:"open" });
+        ctx.element = shadow;
+        ctx.src = src;
+        ctx.control.update(ctx);
+        ctx.root.append(root);
+    }
+});
+
+const create_browser = (src="http://ehpt.org:666/ssr/main/index/John", width=800, height=600) => create_control("Browser", Control, {
+    children: [],
+    init: (ctx) => {
+        const root = document.createElement("div");
+        root.className = "wm browser";
+        add_control(create_frame("BrowserFrame", src, width-6, height-6), ctx.control);
+
+        ctx.element = root;
+        ctx.root.append(root);
+    }
+});
+
 export const add_control = (control, parent, to_front) => {
     if(to_front) {
         parent.children = [control, ...parent.children];
@@ -141,6 +177,7 @@ export const wm = {
     Toolbar: create_toolbar,
     Clock: create_clock,
     Frame: create_frame,
+    Browser: create_browser,
     add_control, add_hook
 }
 

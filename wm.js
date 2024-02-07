@@ -109,8 +109,11 @@ const add_global_hook = (hook, cb) => {
 let first_run = true;
 const ctx = create_program("Root", document.body, (x, y, w, h) => {
     const program_list = {
-        wm_hello: () => create_window(first_run ? "Welcome to John's iMac!" : "John's iMac - About", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
+        wm_hello: () => create_window(first_run ? "Welcome to John's iMac" : "John's iMac - About", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
             add_control(wm.Frame("HelloFrame", "./about.html", 314, 214), ctx.control);
+        }),
+        wm_browser: () => create_window("Browser", centered(800, w), centered(600, h), 800, 600, true, (ctx) => {
+            add_control(wm.Browser(), ctx.control)
         })
     };
     const programs = {};
