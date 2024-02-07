@@ -70,7 +70,30 @@ const create_toolbar = (title, window, can_close=true) => create_control("Toolba
     }
 });
 
-const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, hooks={}) => create_control(name, Control, {
+const create_frame = (name, src, width, height) => create_control(name, Control, {
+    children: [],
+    init: (ctx) => {
+        const root = document.createElement("div");
+        const overlay = document.createElement("div");
+        overlay.style = `
+            position: absolute;
+            width: ${width}px;
+            height: ${height}px;
+            z-index: 1;
+        `;
+        const frame = document.createElement("iframe");
+        frame.className = "wm frame";
+        frame.src = src;
+        frame.width = width;
+        frame.height = height;
+        root.append(overlay, frame);
+
+        ctx.element = root;
+        ctx.root.append(root);
+    }
+});
+
+const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=()=>{}) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
@@ -84,6 +107,7 @@ const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, ho
         root.className = "wm window shadow";
         ctx.element = root;
         add_control(create_toolbar(name, ctx.control, can_close), ctx.control, true);
+        cb(ctx);
         ctx.root.append(root);
     },
     dimensions: (ctx) => ({ 
@@ -91,8 +115,7 @@ const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, ho
         y: ctx.element.attributeStyleMap.get("top"), 
         width: ctx.element.attributeStyleMap.get("width"), 
         height: ctx.element.attributeStyleMap.get("height")
-    }),
-    ...hooks
+    })
 });
 
 const move = (ctx, to_x, to_y) => {
@@ -145,9 +168,12 @@ const create_program = (name, root, cb, width=800, height=600) => {
     return create_ctx(name, cb(x, y, width, height), root);
 };
 
+let first_run = true;
 const ctx = create_program("Root", document.body, (x, y, w, h) => {
     const program_list = {
-        wm_hello: () => create_window("Welcome to John's iMac Webserver!", centered(320, w), centered(240, h), 320, 240)
+        wm_hello: () => create_window(first_run ? "Welcome to John's iMac Webserver!" : "John's iMac - About", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
+            add_control(create_frame("HelloFrame", "./about.html", 314, 214), ctx.control);
+        })
     };
     const programs = {};
     const open_programs = new Set();
@@ -159,11 +185,11 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             const root = document.createElement("section");
             root.className = "wm desktop";
             const desktop_programs = Object.keys(program_list).map(name => {
-                programs[name] = () => create_program(name, root, (x, y, w, h) => {
+                programs[name] = () => create_program(name, root, () => {
                     const window = program_list[name]();
                     add_hook(window, "onclose", () => open_programs.delete(name));
                     return window;
-                }, 320, 240);
+                });
 
                 const container = document.createElement("button");
                 container.className = "wm desktop-icon";
@@ -193,5 +219,5 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
     add_control(wm_desktop, wm_root);
     return wm_root;
 });
-
 run(ctx);
+first_run = false;
