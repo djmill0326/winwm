@@ -10,25 +10,19 @@ const create_control = (name, proto=Control, hooks={}) => create_object(name, { 
 const create_button = (name, onclick) => create_control("Button", Control, {
     children: [],
     init: (ctx) => {
-        if(ctx.element) {
-            ctx.element.remove();
-        }
         const root = document.createElement("button");
         root.innerText = name;
         root.className = "wm button";
         root.onclick = onclick;
+
         ctx.element = root;
         ctx.root.append(root);
     }
 });
 
-const create_toolbar = (title, can_close=true) => create_control("Toolbar", Control, {
+const create_toolbar = (title, window, can_close=true) => create_control("Toolbar", Control, {
     children: [],
     init: (ctx) => {
-        if(ctx.element) {
-            ctx.element.remove();
-            delete ctx.element;
-        }
         const root = document.createElement("span");
         root.className = "wm toolbar";
         const name = document.createElement("span");
@@ -41,8 +35,8 @@ const create_toolbar = (title, can_close=true) => create_control("Toolbar", Cont
             // toolbar close button
             add_control(create_button("x", () => { 
                 // fixme: this is not correct at all
-                ctx.root.remove(); 
-                delete ctx.control;
+                ctx.root.remove();
+                if(window.onclose) window.onclose(ctx);
             }), ctx.control);
         }
 
@@ -71,6 +65,7 @@ const create_toolbar = (title, can_close=true) => create_control("Toolbar", Cont
             }
         });
 
+        ctx.element = root;
         ctx.root.append(root);
     }
 });
@@ -78,10 +73,6 @@ const create_toolbar = (title, can_close=true) => create_control("Toolbar", Cont
 const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, hooks={}) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
-        if (ctx.element) {
-            ctx.element.remove();
-            delete ctx.element;
-        }
         const root = document.createElement("div");
         root.style = `
             position: absolute;
@@ -90,9 +81,9 @@ const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, ho
             left: ${x}px;
             top: ${y}px;
         `;
-        root.className = "wm window";
+        root.className = "wm window shadow";
         ctx.element = root;
-        add_control(create_toolbar(name, can_close), ctx.control);
+        add_control(create_toolbar(name, ctx.control, can_close), ctx.control, true);
         ctx.root.append(root);
     },
     dimensions: (ctx) => ({ 
@@ -111,8 +102,16 @@ const move = (ctx, to_x, to_y) => {
     }
 }
 
-const add_control = (control, parent) => {
-    parent.children.push(control);
+const add_control = (control, parent, to_front) => {
+    if(to_front) {
+        parent.children = [control, ...parent.children];
+    } else {
+        parent.children.push(control);
+    }
+}
+
+const add_hook = (control, hook, cb) => {
+    control[hook] = cb;
 }
 
 const create_ctx = (name, control, el_root) => create_object(name, {
@@ -147,9 +146,51 @@ const create_program = (name, root, cb, width=800, height=600) => {
 };
 
 const ctx = create_program("Root", document.body, (x, y, w, h) => {
-    const wm_root = create_window("John's iMac", x, y, w, h, false);
-    const wm_hello = create_window("Welcome to John's iMac Webserver!", centered(320, w), centered(240, h), 320, 240);
-    add_control(wm_hello, wm_root);
+    const program_list = {
+        wm_hello: () => create_window("Welcome to John's iMac Webserver!", centered(320, w), centered(240, h), 320, 240)
+    };
+    const programs = {};
+    const open_programs = new Set();
+    
+    const wm_root = create_window("John's iMac - Desktop", x, y, w, h, false);
+    const wm_desktop = create_control("Desktop", Control, {
+        children: [],
+        init: (ctx) => {
+            const root = document.createElement("section");
+            root.className = "wm desktop";
+            const desktop_programs = Object.keys(program_list).map(name => {
+                programs[name] = () => create_program(name, root, (x, y, w, h) => {
+                    const window = program_list[name]();
+                    add_hook(window, "onclose", () => open_programs.delete(name));
+                    return window;
+                }, 320, 240);
+
+                const container = document.createElement("button");
+                container.className = "wm desktop-icon";
+                const icon = document.createElement("img");
+                icon.className = "wm shadow";
+                icon.src = "./folder.png";
+                const label = document.createElement("a");
+                label.className = "wm shadow";
+                label.innerText = name;
+
+                container.addEventListener("click", () => {
+                    if (open_programs.has(name)) return;
+                    run(programs[name]());
+                    open_programs.add(name);
+                });
+
+                container.append(icon, label);
+                return container;
+            });
+            root.append(...desktop_programs);
+            ctx.element = root;
+            ctx.root.append(root);
+            run(programs.wm_hello());
+            open_programs.add("wm_hello");
+        }
+    });
+    add_control(wm_desktop, wm_root);
     return wm_root;
 });
 

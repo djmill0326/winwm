@@ -11,6 +11,12 @@ body {
 
 .wm {
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.wm .shadow {
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
 }
 
 .wm.window {
@@ -59,4 +65,26 @@ body {
     color: #ccc;
     border-left: none;
     outline: 3px inset #ccc;
+}
+
+.wm.desktop-icon {
+    width: fit-content;
+    border: none;
+}
+
+.wm.desktop-icon img {
+    width: 64px;
+}
+
+.wm.desktop-icon:hover img {
+    filter: drop-shadow(4px 4px 6px rgba(0,0,0,0.4));
+}
+
+.wm.desktop-icon:active img {
+    filter: drop-shadow(3px 3px 8px rgba(0,0,0,0.5));
+}
+
+.wm.desktop-icon a {
+    width: 100%;
+    text-align: center;
 }
