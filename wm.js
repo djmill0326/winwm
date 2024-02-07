@@ -115,8 +115,6 @@ const add_control = (control, parent) => {
     parent.children.push(control);
 }
 
-const centered = (size, parent_size) => (parent_size - size) / 2;
-
 const create_ctx = (name, control, el_root) => create_object(name, {
     root: el_root,
     element: null,
@@ -135,19 +133,22 @@ const init_children = (ctx) => {
 };
 
 const run = (ctx) => {
+    if(ctx.element) return;
     init_barebones(ctx);
     init_children(ctx);
 };
 
+const centered = (size, parent_size) => (parent_size - size) / 2;
+
 const create_program = (name, root, cb, width=800, height=600) => {
     const x = Math.max(centered(width, root.clientWidth), 0);
     const y = Math.max(centered(height, root.clientHeight), 0);
-    return create_ctx(name, cb(x, y), root);
+    return create_ctx(name, cb(x, y, width, height), root);
 };
 
-const ctx = create_program("Root", document.body, (x, y) => {
-    const wm_root = create_window("John's iMac", x, y, 800, 600, false);
-    const wm_hello = create_window("Welcome to John's iMac Webserver!", centered(320, 800), centered(240, 600), 320, 240);
+const ctx = create_program("Root", document.body, (x, y, w, h) => {
+    const wm_root = create_window("John's iMac", x, y, w, h, false);
+    const wm_hello = create_window("Welcome to John's iMac Webserver!", centered(320, w), centered(240, h), 320, 240);
     add_control(wm_hello, wm_root);
     return wm_root;
 });
