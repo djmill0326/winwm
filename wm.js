@@ -112,9 +112,12 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
         wm_hello: () => create_window(first_run ? "Welcome to John's iMac" : "John's iMac - About", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
             add_control(wm.Frame("HelloFrame", "./about.html", 314, 214), ctx.control);
         }),
-        wm_browser: () => create_window("Browser", centered(800, w), centered(600, h), 800, 600, true, (ctx) => {
+        wm_does: () => create_window("wmdoes.jpg", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
+            add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, true), ctx.control);
+        }),
+        Browser: () => create_window("Browser", centered(800, w), centered(600, h), 800, 600, true, (ctx) => {
             add_control(wm.Browser(), ctx.control)
-        })
+        }),
     };
     const programs = {};
     const open_programs = new Set();

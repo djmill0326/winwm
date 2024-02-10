@@ -99,7 +99,7 @@ export const create_clock = (cb) => create_control("Clock", Control, {
     }
 });
 
-export const create_frame = (name, src, width, height) => create_control(name, Control, {
+export const create_frame = (name, src, width, height, is_img=false) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
@@ -110,7 +110,7 @@ export const create_frame = (name, src, width, height) => create_control(name, C
             height: 75%;
             z-index: 1;
         `;
-        const frame = document.createElement("iframe");
+        const frame = is_img ? document.createElement("img") : document.createElement("iframe");
         frame.className = "wm frame";
         frame.src = src;
         frame.width = width;
