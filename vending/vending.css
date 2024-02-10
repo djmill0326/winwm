@@ -1,0 +1,117 @@
+* {
+    box-sizing: border-box;
+    user-select: none;
+    scrollbar-width: none;
+}
+
+.flex {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+body.light {
+    background-color: #eee;
+    color: #111;
+}
+
+body.dark {
+    background-color: #333;
+    color: #eee;
+}
+
+h1 {
+    margin: 0;
+    padding: 0;
+}
+
+#main {
+    padding: 1em;
+    flex-grow: 100;
+}
+
+strong {
+    color: lightcoral;
+}
+
+.corn {
+    color: cornflowerblue;
+}
+
+#selector a {
+    margin-right: 0.5em;
+    color: #333;
+    font-size: 1.333em;
+}
+
+#selector a:hover {
+    color: lightcoral !important;
+}
+
+#selector a:active {
+    color: coral !important;
+}
+
+body.dark #selector a {
+    color: #ccc;
+}
+
+table {
+    display: table!important;
+}
+
+table tr {
+    cursor: pointer;
+}
+
+table tr:hover {
+    color: cornflowerblue;
+}
+
+table tr:active {
+    color: lightblue;
+}
+
+#editor {
+    width: 420px;
+    margin: 4px 0;
+    position: absolute;
+    z-index: 1;
+    top: 86px;
+    left:20px;
+}
+
+.pad {
+    padding: 4px;
+}
+
+#main {
+    height: 100%;
+}
+
+#frame {
+    overflow-y: scroll;
+}
+
+.fancy {
+    background: white;
+    border: 3px inset #fff;
+}
+
+td {
+    border-top: 1px solid #eee;
+}

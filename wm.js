@@ -1,11 +1,10 @@
-import { wm, add_control, add_hook, Control } from "./controls.js";
+import { wm, add_control, add_hook, Control, spool_animations } from "./controls.js";
 import { create_file_selector, create_menu_bar } from "./fs.js";
-import GL from "./gl.js";
-window.GL = GL;
+import termemu from "./termemu.js";
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=()=>{}) => wm.Control(name, Control, {
     children: [],
-    hooks: ["click"],
+    hooks: ["mousedown"],
     init: (ctx) => {
         const root = document.createElement("div");
         root.style = `
@@ -110,19 +109,22 @@ let first_run = true;
 const ctx = create_program("Root", document.body, (x, y, w, h) => {
     const program_list = {
         wm_hello: () => create_window(first_run ? "Welcome to John's iMac" : "John's iMac - About", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
-            add_control(wm.Frame("HelloFrame", "./about.html", 314, 214), ctx.control);
+            add_control(wm.Frame("HelloFrame", "./about.html", 314, 214, 0.75), ctx.control);
         }),
         wm_does: () => create_window("wmdoes.jpg", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
-            add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, true), ctx.control);
+            add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 1, true), ctx.control);
         }),
-        Browser: () => create_window("Browser", centered(800, w), centered(600, h), 800, 600, true, (ctx) => {
+        wm_term: () => create_window("termemu", centered(640, w), centered(480, h), 640, 480, true, (ctx) => {
+            add_control(termemu(), ctx.control)
+        }),
+        Browser: () => create_window("Browser", centered(1280, w), centered(720, h), 1280, 720, true, (ctx) => {
             add_control(wm.Browser(), ctx.control)
         }),
     };
     const programs = {};
     const open_programs = new Set();
 
-    add_global_hook("click", focus_window);
+    add_global_hook("mousedown", focus_window);
     
     const wm_root = create_window("John's iMac - Desktop", x, y, w, h, false);
     const wm_desktop = wm.Control("Desktop", Control, {
@@ -162,6 +164,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             ctx.root.append(root);
             run(programs.wm_hello());
             open_programs.add("wm_hello");
+            wm.spool_animations();
         }
     });
     add_control(create_menu_bar(), wm_root);

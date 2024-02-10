@@ -18,6 +18,11 @@ body {
     transition: all 66.67ms ease-in;
 }
 
+.wm.dark {
+    background: #111;
+    color: #eee;
+}
+
 .wm .shadow {
     filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));
 }
@@ -50,8 +55,28 @@ body {
     display: flex;
     flex-direction: column;
     background: #eee;
-    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
-    opacity: 0.8;
+    filter: grayscale(0.15);
+    opacity: 0.85;
+}
+
+.bound {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.bound * {
+    scrollbar-width: none!important;
+}
+
+.grow {
+    flex-grow: 1;
+}
+
+.wm .clear {
+    background: none!important;
 }
 
 .wm.toolbar {
@@ -141,5 +166,6 @@ body {
 }
 
 .wm.window.focus {
-    opacity: 1;
+    opacity: 0.95;
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
 }

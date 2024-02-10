@@ -20,6 +20,29 @@ export const create_button = (name, onclick) => create_control("Button", Control
     }
 });
 
+let animation_queue = new Map();
+export const spool_animations = () => {
+    animation_queue.forEach(animation => {
+        animation.queue.forEach(x => animation.f(x));
+        animation.queue = [];
+    });
+    requestAnimationFrame(spool_animations);
+};
+
+const anim_ms = 1000/48;
+export const debounce = (f, ms=anim_ms) => {
+    animation_queue.set(f, { f, queue: [] });
+    let disabled = false;
+    return (ev) => {
+        if (disabled) return;
+        disabled = true;
+        setTimeout(() => disabled = false, ms);
+        const anim = animation_queue.get(f);
+        if(!anim) return;
+        anim.queue.push(ev);
+    }
+}
+
 export const create_toolbar = (title, window, can_close=true) => create_control("Toolbar", Control, {
     children: [],
     init: (ctx) => {
@@ -53,17 +76,17 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             prev_mousey = ev.clientY;
             mousedown = true;
         });
-        document.body.addEventListener("mouseup", () => {
+        document.body.addEventListener("click", (ev) => {
             mousedown = false;
         });
-        document.body.addEventListener("mousemove", (ev) => {
+        document.body.addEventListener("mousemove", debounce((ev) => {
             if(mousedown) {
                 let offsetx = ev.clientX - prev_mousex;
                 let offsety = ev.clientY - prev_mousey;
                 ctx.root.attributeStyleMap.set("left", prev_x + offsetx + "px");
                 ctx.root.attributeStyleMap.set("top", prev_y + offsety + "px");
             }
-        });
+        }));
 
         ctx.element = root;
         ctx.root.append(root);
@@ -99,23 +122,26 @@ export const create_clock = (cb) => create_control("Clock", Control, {
     }
 });
 
-export const create_frame = (name, src, width, height, is_img=false) => create_control(name, Control, {
+export const create_frame = (name, src, width, height, interactive=1, img) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
-        const overlay = document.createElement("div");
-        overlay.style = `
-            position: absolute;
-            width: 100%;
-            height: 75%;
-            z-index: 1;
-        `;
-        const frame = is_img ? document.createElement("img") : document.createElement("iframe");
+        if(interactive < 1) {
+            const overlay = document.createElement("div");
+            overlay.style = `
+                position: absolute;
+                width: 100%;
+                height: ${interactive*100}%;
+                z-index: 1;
+            `;
+            root.append(overlay);
+        }
+        const frame = img ? document.createElement("img") : document.createElement("iframe");
         frame.className = "wm frame";
         frame.src = src;
         frame.width = width;
         frame.height = height;
-        root.append(overlay, frame);
+        root.append(frame);
 
         ctx.element = root;
         ctx.root.append(root);
@@ -128,10 +154,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
         if(!ctx.src) return;
         fetch(ctx.src, {
             mode: "no-cors",
-            method: "GET",
-            headers: {
-
-            },
+            method: "GET"
         }).then(res => res.text()).then(text => {
             ctx.element.innerHTML = text;
         });
@@ -146,12 +169,12 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org:666/ssr/main/index/John", width=800, height=600) => create_control("Browser", Control, {
+const create_browser = (src="http://localhost/vending", width=1280, height=720, interactive=0.1) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
         root.className = "wm browser";
-        add_control(create_frame("BrowserFrame", src, width-6, height-6), ctx.control);
+        add_control(create_frame("BrowserFrame", src, width-6, height-26, interactive), ctx.control);
 
         ctx.element = root;
         ctx.root.append(root);
@@ -177,8 +200,9 @@ export const wm = {
     Toolbar: create_toolbar,
     Clock: create_clock,
     Frame: create_frame,
+    ProxyFrame: create_proxy_frame,
     Browser: create_browser,
-    add_control, add_hook
+    add_control, add_hook, debounce, spool_animations
 }
 
 export default wm;
