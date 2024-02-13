@@ -57,6 +57,7 @@ body {
     background: #eee;
     filter: grayscale(0.15);
     opacity: 0.85;
+    transition: all 21ms linear;
 }
 
 .bound {

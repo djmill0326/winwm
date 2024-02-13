@@ -44,12 +44,6 @@ export const debounce = (f, ms=anim_ms) => {
     }
 }
 
-const absolute_pos = (el) => {
-    const parent = el.offsetParent;
-    const rec = parent ? absolute_pos(parent) : [0, 0];
-    return [el.offsetLeft + rec[0], el.offsetTop + rec[1]];
-};
-
 export const create_toolbar = (title, window, can_close=true) => create_control("Toolbar", Control, {
     children: [],
     init: (ctx) => {
