@@ -23,7 +23,9 @@ export const create_button = (name, onclick) => create_control("Button", Control
 let animation_queue = new Map();
 export const spool_animations = () => {
     animation_queue.forEach(animation => {
-        animation.queue.forEach(x => animation.f(x));
+        const len = animation.queue.length;
+        if (len === 0) return;
+        animation.f(animation.queue[len - 1]);
         animation.queue = [];
     });
     requestAnimationFrame(spool_animations);
@@ -38,10 +40,15 @@ export const debounce = (f, ms=anim_ms) => {
         disabled = true;
         setTimeout(() => disabled = false, ms);
         const anim = animation_queue.get(f);
-        if(!anim) return;
-        anim.queue.push(ev);
+        if(anim) anim.queue.push(ev);
     }
 }
+
+const absolute_pos = (el) => {
+    const parent = el.offsetParent;
+    const rec = parent ? absolute_pos(parent) : [0, 0];
+    return [el.offsetLeft + rec[0], el.offsetTop + rec[1]];
+};
 
 export const create_toolbar = (title, window, can_close=true) => create_control("Toolbar", Control, {
     children: [],
@@ -63,28 +70,29 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             }), ctx.control);
         }
 
-        // window movement handling (i don't trust that performance scales on this)
-        let prev_x = null;
-        let prev_y = null;
-        let prev_mousex = null;
-        let prev_mousey = null;
+        // window movement handling (god is dead)
         let mousedown = false;
+        let offset = { x: 0, y: 0 };
+        let transform = { x: 0, y: 0 };
         root.addEventListener("mousedown", (ev) => {
-            prev_x = ctx.root.attributeStyleMap.get("left").value;
-            prev_y = ctx.root.attributeStyleMap.get("top").value;
-            prev_mousex = ev.clientX;
-            prev_mousey = ev.clientY;
+            offset.x = ev.x - transform.x;
+            offset.y = ev.y - transform.y;
             mousedown = true;
         });
         document.body.addEventListener("click", (ev) => {
-            mousedown = false;
+            if(mousedown) {
+                transform.x = ev.x - offset.x;
+                transform.y = ev.y - offset.y;
+                mousedown = false;
+            }
         });
         document.body.addEventListener("mousemove", debounce((ev) => {
             if(mousedown) {
-                let offsetx = ev.clientX - prev_mousex;
-                let offsety = ev.clientY - prev_mousey;
-                ctx.root.attributeStyleMap.set("left", prev_x + offsetx + "px");
-                ctx.root.attributeStyleMap.set("top", prev_y + offsety + "px");
+                const transform =  new CSSTransformValue([new CSSTranslate(
+                    CSS.px(ev.x - offset.x), 
+                    CSS.px(ev.y - offset.y)
+                )]);
+                ctx.root.attributeStyleMap.set("transform", transform);
             }
         }));
 
