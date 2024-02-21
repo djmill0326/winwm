@@ -95,7 +95,6 @@ const open_editor = (page, index, row_el) => {
     editor_frame.append(root);
 }
 
-const main = document.getElementById("main");
 const selector = document.getElementById("selector");
 const frame = document.getElementById("frame");
 const navigate_page = ev => {
