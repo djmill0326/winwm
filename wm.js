@@ -1,4 +1,4 @@
-import { wm, add_control, add_hook, Control, spool_animations, create_control } from "./controls.js";
+import { wm, add_control, add_hook, Control } from "./controls.js";
 import { create_file_selector, create_menu_bar } from "./fs.js";
 import termemu from "./termemu.js";
 

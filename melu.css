@@ -65,17 +65,20 @@ body {
 }
 
 .wm .shadow {
-    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.2));
 }
 
 .wm.button, .wm.menubar {
     outline: none;
-    border: 3px outset var(--background-mute);
     background: var(--background-mute);
     color: var(--color-mute);
     padding: 0 2px;
     margin: 0;
     font-size: 0.8rem;
+}
+
+.old .wm.button, .old .wm.menubar {
+    border: 3px outset var(--background-mute);
 }
 
 .wm.button:hover, .wm.menubar:hover {
@@ -84,6 +87,9 @@ body {
 
 .wm.button:active, .wm.menubar:active {
     filter: none;
+}
+
+.old .wm.button:active, .old .wm.menubar:active {
     border: 3px inset var(--background-mute);
 }
 
@@ -94,15 +100,19 @@ body {
 
 .wm.window {
     font-size: 16px;
-    border: 3px outset var(--background-mute);
-    border-radius: 1px;
     display: flex;
     flex-direction: column;
     background: var(--background);
-    filter: grayscale(0.15);
     opacity: 0.85;
     transition: all 21ms linear;
     color: var(--color);
+    padding: 2px;
+    border: 1px solid var(--background-mute);
+}
+
+.old .wm.window {
+    padding: 0;
+    border: 3px outset var(--background-mute);
 }
 
 .bound {
@@ -128,17 +138,18 @@ body {
 .wm.toolbar {
     display: flex;
     flex-direction: row;
-    background: var(--color);
+    background: none;
     font-size: 12px;
     user-select: none;
     padding: 3px 6px;
+    opacity: 0.9;
 }
 
 .old .wm.toolbar {
     padding: 0;
     padding-left: 4px;
     font-weight: bold;
-    background: var(--fancy);
+    background: var(--background-mute);
     border-bottom: 3px outset var(--background-mute);
 }
 
@@ -147,16 +158,21 @@ body {
 }
 
 .wm.toolbar .title {
-    color: var(--background);
+    color: var(--color-bright);
     flex-grow: 100;
+    text-align: center;
 }
 
-.old .wm.toolbar .title,
+.old .wm.toolbar .title {
+    flex-grow: 100;
+    text-align: left;
+}
+
 .wm.window.focus > .toolbar .title {
     color: #eee;
 }
 
-.wm.focus > .toolbar .title::after {
+.old .wm.focus > .toolbar .title::after {
     content: "💯";
     display: contents;
     margin-left: 2px;
@@ -167,7 +183,7 @@ body {
     background: none;
     transition: all 66.67ms ease-in;
     opacity: 1;
-    color: var(--background-mute);
+    color: var(--color-mute);
 }
 
 .old .wm.toolbar .button {
@@ -179,7 +195,7 @@ body {
 
 .wm.toolbar .button:hover {
     opacity: 0.9;
-    color: var(--background);
+    color: var(--color);
 }
 
 .wm.toolbar .button:active {
@@ -203,9 +219,12 @@ body {
 
 .wm.desktop {
     padding: 4px;
-    border: 3px inset var(--background-mute);
     border-top: none;
     flex-grow: 100;
+}
+
+.old .wm.desktop {
+    border: 3px inset var(--background-mute);
 }
 
 .wm.desktop-icon {
