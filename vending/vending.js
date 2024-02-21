@@ -84,6 +84,7 @@ const open_editor = (page, index, row_el) => {
         root.placeholder = name;
         root.value = col;
         root.id = "editor-" + name;
+        if (index > 6) root.disabled = true;
         root.addEventListener("input", () => {
             row[index] = root.value;
             row_el.children[index].innerText = root.value;
@@ -166,6 +167,9 @@ const update_one = (page, index) => {
 
 const dirty = () => {
     if (editor_frame.children.length !== 0) {
+        // note:
+        // there's an interesting bug here where the original computed values remain
+        // within the editor even if they should've changed. i'm not fixing it. it's cool
         editor.active = false;
         editor_frame.children[0].remove();
         update_one(window.pages[editor.page], editor.row);
