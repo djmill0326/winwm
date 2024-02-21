@@ -171,7 +171,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://localhost/vending", width=1280, height=720, interactive=0.1) => create_control("Browser", Control, {
+const create_browser = (src="http://192.168.1.151/vending", width=1280, height=720, interactive=0.1) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");

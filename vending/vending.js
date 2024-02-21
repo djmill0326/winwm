@@ -6,7 +6,7 @@ const program = mk("vending");
 
 // spaghetti logic
 
-const req_location = "http://localhost/vending/data/";
+const req_location = "http://192.168.1.151/vending/data/";
 const request = uri => read_managed(req_location + uri, schema);webkitURL
 
 const wrapped = (name, el, to_root=false) => {
