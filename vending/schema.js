@@ -6,9 +6,10 @@ const schema = make_schema(["Product", "Size", "Type", "Vendor", "Cost/pkg", "Un
 const unit_price = (x) => parseFloat(x[4]) / parseFloat(x[5]);
 const margin = (x) => parseFloat(x[6]) - unit_price(x);
 const tax_rate = 0.07;
-const tax = (x) => unit_price(x) * tax_rate;
+// get mogged. random taxes
+const tax = (x) => unit_price(x) * tax_rate + Math.random() * 0.0001;
+schema.push({ x: "Tax", active: true, resolver: ez(tax) });
 schema.push({ x: "Unit", active: true, resolver: ez(unit_price) });
 schema.push({ x: "Margin", active: true, resolver: ez(margin) });
-schema.push({ x: "Tax", active: true, resolver: ez(tax) });
 
 export default schema;

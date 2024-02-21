@@ -166,8 +166,7 @@ const update_one = (page, index) => {
 
 const dirty = () => {
     if (editor_frame.children.length !== 0) {
-        // note:
-        // there's an interesting bug here where the original computed values remain
+        // note: there's an interesting bug here where the original computed values remain
         // within the editor even if they should've changed. i'm not fixing it. it's cool
         editor.active = false;
         editor_frame.children[0].remove();
