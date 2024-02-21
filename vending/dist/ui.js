@@ -44,15 +44,14 @@ export const mk_context = (root, display_name = TRADE_NAME) => {
     const event_proxy = mk_handler({ display_name, root });
     // make root ULTRA
     mk_ultra(event_proxy, root);
-    const children = new Map();
+    const children = new Set();
     const Ctx = { display_name, root, children, event_proxy };
     return Ctx;
 };
 export const mk_append = (context) => (el) => {
-    var _a, _b;
-    (_a = context.children) === null || _a === void 0 ? void 0 : _a.set(el, mk_context(el));
+    var _a;
+    (_a = context.children) === null || _a === void 0 ? void 0 : _a.add(el);
     context.root.append(el);
-    return (_b = context.children) === null || _b === void 0 ? void 0 : _b.get(el);
 };
 export const mk_program = (context) => {
     console.warn("created program", context);

@@ -10,11 +10,9 @@ const req_location = "http://localhost/vending/data/";
 const request = uri => read_managed(req_location + uri, schema);webkitURL
 
 const wrapped = (name, el, to_root=false) => {
+    if(to_root) program.append(el);
     const ctx = mk_context(el, name);
     const append = mk_append(ctx);
-    if(to_root) {
-        return { ctx, append, _: program.append(el) };
-    }
     return { ctx, append };
 };
 
@@ -28,9 +26,9 @@ const create_page = (name, page_data) => {
     const heading = document.createElement("h1");
     heading.className = "page-heading";
     heading.innerText = name;
-    root.append(heading);
+    wrapper.append(heading);
     const table = create_table(name, page_data);
-    root.append(table);
+    wrapper.append(table);
     const selector = document.createElement("a");
     selector.href = "#" + name;
     selector.className = "link";
@@ -44,6 +42,13 @@ const create_table = (name, page_data) => {
     const root = document.createElement("table");
     root.dataset.name = name;
     root.className = "wm page-table";
+    const heading = wrapped_quick("table-header", "thead");
+    schema.forEach(({ x }) => {
+        const td = document.createElement("td");
+        td.innerText = x;
+        heading.append(td);
+    });
+    root.append(heading.ctx.root);
     page_data.forEach((row, index) => {
         const row_el = document.createElement("tbody");
         populate_row(name, index, row, row_el, root);
@@ -120,7 +125,7 @@ const init_links = () => {
     }
 }
 
-const page_names = ["Snack", "Candy", "Meal", "Drink", "Water", "Soda", "Energy"];
+const page_names = ["Snacks", "Candy", "Meals", "Drinks", "Water", "Soda", "Energy"];
 const page_data_req = Promise.all(page_names.map(async name => await request(name + ".csv")));
 page_data_req.then(managed_data => {
     const page_data = managed_data.map(x => x.resolve());
@@ -132,12 +137,11 @@ page_data_req.then(managed_data => {
     });
     init_links();
     document.getElementById("loading").remove();
-    navigate_page({ target: { dataset: { arg: "Snack" } } });
-    console.log("Page data loaded successfully.", pages);
+    navigate_page({ target: { dataset: { arg: "Snacks" } } });
+    console.info("Page data loaded successfully.", pages);
     const table_normalized = {};
     pages.forEach(page => page.page_data.forEach(row => {
         const p_group = row[2];
-        row[2] = page.name;
         if(!table_normalized[p_group]) table_normalized[p_group] = [];
         table_normalized[p_group].push(row);
     }));
@@ -159,7 +163,7 @@ const populate_row = (table_name, index, data, row_el) => {
 
 const update_one = (page, index) => {
     const table_el = page.root.children[1];
-    const row_el = table_el.children[index];
+    const row_el = table_el.children[index + 1];
     const row_data = get_row(schema, page.page_data, index);
     populate_row(page.name, index, row_data, row_el, table_el);
 };
@@ -171,6 +175,6 @@ const dirty = () => {
         editor.active = false;
         editor_frame.children[0].remove();
         update_one(window.pages[editor.page], editor.row);
-        console.log("updating editor state", editor);
+        console.info("Updated editor state.", editor);
     }
 };

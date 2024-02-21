@@ -16,7 +16,7 @@ export const read_csv = uri => fetch(uri).then(res => res.text()).then(text => t
   [[idx]: { x, active?, resolver }]
 */
 
-export const make_schema = scheme => scheme.map(x => ({ x, active: true, resolver: null }));
+export const make_schema = (scheme=[]) => scheme.map(x => ({ x, active: true, resolver: null }));
 
 export const get_row = (schema, data, index) => {
     const row = [];

@@ -53,7 +53,7 @@ export const mk_context = (root: HTMLElement, display_name=TRADE_NAME) => {
     // make root ULTRA
     mk_ultra(event_proxy, root);
 
-    const children: Map<HTMLElement, typeof Ctx> = new Map();
+    const children: Set<HTMLElement> = new Set();
 
     const Ctx: {
         display_name: string,
@@ -65,9 +65,8 @@ export const mk_context = (root: HTMLElement, display_name=TRADE_NAME) => {
 };
 
 export const mk_append = (context: ReturnType<typeof mk_context>) => (el: HTMLElement) => {
-    context.children?.set(el, mk_context(el));
+    context.children?.add(el);
     context.root.append(el);
-    return context.children?.get(el);
 }
 
 export const mk_program = (context: ReturnType<typeof mk_context>) => {
