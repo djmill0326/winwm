@@ -13,8 +13,8 @@ const tax_rate = 0.07;
 // get mogged. random taxes (this is a bug in at least chromium, adding an external value fixes)
 const tax = (x) => unit_price(x) * tax_rate + Math.random() * scam_factor;
 const cost = (x) => parseFloat(x[6]) + tax(x);
-schema.push({ x: "Margin", active: true, resolver: ez(margin) });
 schema.push({ x: "Unit", active: true, resolver: ez(unit_price) });
+schema.push({ x: "Margin", active: true, resolver: ez(margin) });
 schema.push({ x: "Tax", active: true, resolver: ez(tax) });
 schema.push({ x: "Cost", active: true, resolver: ez(cost) });
 
