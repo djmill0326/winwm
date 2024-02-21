@@ -1,13 +1,28 @@
 import { read_managed, get_row } from "./csv.js";
 import schema from "./schema.js";
+import mk, { mk_context, mk_append } from "./dist/ui.js";
+
+const program = mk("vending");
 
 // spaghetti logic
 
 const req_location = "http://localhost/vending/data/";
-const request = uri => read_managed(req_location + uri, schema);
+const request = uri => read_managed(req_location + uri, schema);webkitURL
+
+const wrapped = (name, el, to_root=false) => {
+    const ctx = mk_context(el, name);
+    const append = mk_append(ctx);
+    if(to_root) {
+        return { ctx, append, _: program.append(el) };
+    }
+    return { ctx, append };
+};
+
+const wrapped_quick = (name, el_type) => wrapped(name, document.createElement(el_type));
 
 const create_page = (name, page_data) => {
-    const root = document.createElement("section");
+    const wrapper = wrapped_quick(name, "section", true);
+    const root = wrapper.ctx.root;
     root.id = "page-" + name;
     root.className = "wm fancy pad";
     const heading = document.createElement("h1");
@@ -22,7 +37,7 @@ const create_page = (name, page_data) => {
     selector.innerText = name;
     selector.dataset.arg = name;
     selector.dataset.onclick = "navigate_page";
-    return { name, page_data, root, selector };
+    return { name, page_data, wrapper, root, selector };
 };
 
 const create_table = (name, page_data) => {
