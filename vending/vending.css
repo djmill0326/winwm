@@ -24,16 +24,6 @@ body {
     flex-direction: column;
 }
 
-body.light {
-    background-color: #eee;
-    color: #111;
-}
-
-body.dark {
-    background-color: #333;
-    color: #eee;
-}
-
 h1 {
     margin: 0;
     padding: 0;
@@ -54,7 +44,6 @@ strong {
 
 #selector a {
     margin-right: 0.5em;
-    color: #333;
     font-size: 1.333em;
 }
 
@@ -64,10 +53,6 @@ strong {
 
 #selector a:active {
     color: coral !important;
-}
-
-body.dark #selector a {
-    color: #ccc;
 }
 
 table {
@@ -112,10 +97,9 @@ thead td {
 }
 
 .fancy {
-    background: white;
-    border: 3px inset #fff;
+    border: 3px inset #ccc;
 }
 
 td {
-    border-top: 1px solid #eee;
+    border-top: 1px solid #ccc;
 }

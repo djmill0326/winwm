@@ -1,4 +1,4 @@
-import { wm, add_control, add_hook, Control, spool_animations } from "./controls.js";
+import { wm, add_control, add_hook, Control, spool_animations, create_control } from "./controls.js";
 import { create_file_selector, create_menu_bar } from "./fs.js";
 import termemu from "./termemu.js";
 
@@ -117,6 +117,9 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
         wm_term: () => create_window("termemu", centered(640, w), centered(480, h), 640, 480, true, (ctx) => {
             add_control(termemu(), ctx.control)
         }),
+        wm_ctl: () => create_window("Control Panel", 800 - 196, 64, 160, 48, false, (ctx) => {
+            add_control(wm.ControlPanel(document.body), ctx.control)
+        }),
         Browser: () => create_window("Browser", centered(1280, w), centered(720, h), 1280, 720, true, (ctx) => {
             add_control(wm.Browser(), ctx.control)
         }),
@@ -140,7 +143,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
                 });
 
                 const container = document.createElement("button");
-                container.className = "wm desktop-icon";
+                container.className = "wm simple desktop-icon";
                 const icon = document.createElement("img");
                 icon.className = "wm shadow";
                 icon.src = "./folder.png";
@@ -163,7 +166,9 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             ctx.element = root;
             ctx.root.append(root);
             run(programs.wm_hello());
+            run(programs.wm_ctl());
             open_programs.add("wm_hello");
+            open_programs.add("wm_ctl");
             wm.spool_animations();
         }
     });

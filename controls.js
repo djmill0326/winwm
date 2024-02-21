@@ -183,6 +183,43 @@ const create_browser = (src="http://192.168.1.151/vending", width=1280, height=7
     }
 });
 
+const create_control_panel = (root_el) => create_control("control.exe", {
+    children: [],
+    init: (ctx) => {
+        const root = document.createElement("div");
+        root.className = "wm control";
+
+        const theme = window.localStorage.getItem("wm");
+        window.current_theme = parseInt(theme ? theme : 1);
+
+        const determine_theme = (_, inc=true) => {
+            window.current_theme += inc;
+            switch (window.current_theme) {
+                case 1:
+                    root_el.classList.add("one");
+                    root_el.classList.remove("dos");
+                    break;
+                default:
+                    root_el.classList.add("dos");
+                    root_el.classList.remove("one");
+                    window.current_theme = 0;
+            }
+            if(window.current_theme) root_el.classList.toggle("old");
+            window.localStorage.setItem("wm", window.current_theme);
+            document.querySelectorAll("iframe").forEach(frame => {
+                frame.contentWindow.postMessage("theme:=" + window.current_theme);
+            });
+        };
+
+        determine_theme(0, false);
+        
+        add_control(create_button("Switch Theme", determine_theme), ctx.control);
+
+        ctx.element = root;
+        ctx.root.append(root);
+    }
+})
+
 export const add_control = (control, parent, to_front) => {
     if(to_front) {
         parent.children = [control, ...parent.children];
@@ -204,6 +241,7 @@ export const wm = {
     Frame: create_frame,
     ProxyFrame: create_proxy_frame,
     Browser: create_browser,
+    ControlPanel: create_control_panel,
     add_control, add_hook, debounce, spool_animations
 }
 
