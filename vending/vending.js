@@ -1,18 +1,10 @@
-const req_location = "http://localhost/vending/data";
+import { read_managed, get_row } from "./csv.js";
+import schema from "./schema.js";
 
-const trim = x => x.trim();
-const trim_array_by_index_length = arr => arr.filter(x => x.length !== 0);
+// spaghetti logic
 
-const read_csv = uri => fetch(req_location + "/" + uri).then(res => res.text()).then(text => trim_array_by_index_length(text
-    .split("\n")
-    .map(row => row
-        .split(",")
-        .map(trim)
-    )
-    .map(trim_array_by_index_length)
-));
-
-const to_csv = data => data.map(row => row.join(",")).join("<br/>");
+const req_location = "http://localhost/vending/data/";
+const request = uri => read_managed(req_location + uri, schema);
 
 const create_page = (name, page_data) => {
     const root = document.createElement("section");
@@ -38,25 +30,21 @@ const create_table = (name, page_data) => {
     root.dataset.name = name;
     root.className = "wm page-table";
     page_data.forEach((row, index) => {
-        const row_el = document.createElement("tr");
-        row_el.dataset.index = index;
-        row.forEach((col, index) => {
-            const col_el = document.createElement("td");
-            col_el.dataset.index = index;
-            col_el.innerText = col;
-            row_el.append(col_el);
-        });
-        row_el.addEventListener("click", () => open_editor(name, row, row_el));
+        const row_el = document.createElement("tbody");
+        populate_row(name, index, row, row_el, root);
         root.append(row_el);
-    })
+    });
     return root;
 }
 
-const schema = ["Product", "Size", "Type", "Vendor", "Cost/pkg", "Units/pkg", "Price"];
-
+const editor = { active: false, page: null, row: null };
 const editor_frame = document.getElementById("editor");
-const open_editor = (page, row, row_el) => {
-    if (editor_frame.children.length !== 0) editor_frame.children[0].remove();
+const open_editor = (page, index, row_el) => {
+    dirty();
+    editor.active = true;
+    editor.page = page;
+    editor.row = index;
+    const row = window.pages[page].page_data[index];
     const root = document.createElement("section");
     root.className = "wm window focus";
     const heading = document.createElement("section");
@@ -67,19 +55,20 @@ const open_editor = (page, row, row_el) => {
     const close_btn = document.createElement("button");
     close_btn.className = "button";
     close_btn.innerHTML = "&#10006;";
-    close_btn.addEventListener("click", () => root.remove());
+    close_btn.addEventListener("click", () => dirty());
     heading.append(label, close_btn);
     const control_frame = document.createElement("section");
     control_frame.className = "wm window focus pad";
     row.forEach((col, index) => {
+        const name = schema[index].x;
         const label = document.createElement("label");
-        label.for = "editor-" + schema[index];
-        label.innerText = schema[index];
+        label.for = "editor-" + name;
+        label.innerText = name;
         const root = document.createElement("input");
         root.type = "input";
-        root.placeholder = schema[index];
+        root.placeholder = name;
         root.value = col;
-        root.id = "editor-" + schema[index];
+        root.id = "editor-" + name;
         root.addEventListener("input", () => {
             row[index] = root.value;
             row_el.children[index].innerText = root.value;
@@ -95,6 +84,7 @@ const selector = document.getElementById("selector");
 const frame = document.getElementById("frame");
 const navigate_page = ev => {
     if(window.pages) {
+        dirty();
         const page = window.pages[ev.target.dataset.arg];
         if (window.active_page) window.active_page.root.remove();
         window.active_page = page;
@@ -116,8 +106,9 @@ const init_links = () => {
 }
 
 const page_names = ["Snack", "Candy", "Meal", "Drink", "Water", "Soda", "Energy"];
-const page_data_req = Promise.all(page_names.map(async name => await read_csv(name + ".csv")));
-page_data_req.then(page_data => {
+const page_data_req = Promise.all(page_names.map(async name => await request(name + ".csv")));
+page_data_req.then(managed_data => {
+    const page_data = managed_data.map(x => x.resolve());
     const pages = page_data.map((x, i) => create_page(page_names[i], x));
     window.pages = {};
     pages.forEach(page => {
@@ -135,15 +126,34 @@ page_data_req.then(page_data => {
         if(!table_normalized[p_group]) table_normalized[p_group] = [];
         table_normalized[p_group].push(row);
     }));
-    /* reversible normalization-scheme conversion
-    Object.keys(table_normalized).forEach(page => {
-        const cache = {};
-        table_normalized[page] = table_normalized[page].filter(row => {
-            if(!cache[row[0]]) {
-                cache[row[0]] = true;
-                return true;
-            } else return false;
-        });
-    });
-    document.body.innerHTML += "<br/>" + Object.keys(table_normalized).map(key => "<h1>" + key + "</h1>" + to_csv(table_normalized[key])).join("<br/>");*/
 });
+
+const populate_row = (table_name, index, data, row_el) => {
+    const root = document.createElement("tr");
+    root.dataset.index = index;
+    data.forEach((col, i) => {
+        const col_el = document.createElement("td");
+        col_el.dataset.index = i;
+        col_el.innerText = col;
+        root.append(col_el);
+    });
+    root.addEventListener("click", () => open_editor(table_name, index, root));
+    if (row_el.children[0]) row_el.children[0].remove();
+    row_el.append(root);
+};
+
+const update_one = (page, index) => {
+    const table_el = page.root.children[1];
+    const row_el = table_el.children[index];
+    const row_data = get_row(schema, page.page_data, index);
+    populate_row(page.name, index, row_data, row_el, table_el);
+};
+
+const dirty = () => {
+    if (editor_frame.children.length !== 0) {
+        editor.active = false;
+        editor_frame.children[0].remove();
+        update_one(window.pages[editor.page], editor.row);
+        console.log("updating editor state", editor);
+    }
+};
