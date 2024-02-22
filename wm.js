@@ -145,7 +145,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
                 const container = document.createElement("button");
                 container.className = "wm simple desktop-icon";
                 const icon = document.createElement("img");
-                icon.className = "wm shadow";
+                icon.className = "wm shadow ico";
                 icon.src = "./folder.png";
                 const label = document.createElement("a");
                 label.className = "wm shadow";

@@ -25,12 +25,11 @@ export const create_term = () => wm.Control("termemu", {
             color: #eee;
             font-size: 14px;
             margin: 0px;
-            padding: 4px;
             font-family: monospace!important;
             outline: none!important;
         `;
         input.type = "text";
-        input.className = "wm window";
+        input.className = "wm input";
         const div = document.createElement("div");
         div.className = "wm grow clear";
         

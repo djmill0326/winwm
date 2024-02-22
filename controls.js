@@ -175,7 +175,7 @@ const create_browser = (src="http://192.168.1.151/vending", width=1280, height=7
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
-        root.className = "wm browser";
+        root.className = "wm browser panel";
         add_control(create_frame("BrowserFrame", src, width-6, height-26, interactive), ctx.control);
 
         ctx.element = root;
@@ -183,11 +183,16 @@ const create_browser = (src="http://192.168.1.151/vending", width=1280, height=7
     }
 });
 
+const change_ico = (cls, to="folder.png") => {
+    const icons = document.getElementsByClassName(cls);
+    for (let i = 0; i < icons.length; i++) icons[i].src = to;
+}
+
 const create_control_panel = (root_el) => create_control("control.exe", {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
-        root.className = "wm control";
+        root.className = "wm control panel";
 
         const theme = window.localStorage.getItem("wm");
         window.current_theme = parseInt(theme ? theme : 0);
@@ -205,6 +210,8 @@ const create_control_panel = (root_el) => create_control("control.exe", {
                     window.current_theme = 0;
             }
             if(window.current_theme) root_el.classList.toggle("old");
+            if(root_el.classList.contains("old")) change_ico("ico")
+            else change_ico("ico", "windows.png")
             window.localStorage.setItem("wm", window.current_theme);
             document.querySelectorAll("iframe").forEach(frame => {
                 frame.contentWindow.postMessage("theme:=" + window.current_theme);

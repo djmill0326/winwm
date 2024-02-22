@@ -78,7 +78,7 @@ const open_editor = (page, index, row_el) => {
     close_btn.addEventListener("click", () => dirty());
     heading.append(label, close_btn);
     const control_frame = document.createElement("section");
-    control_frame.className = "wm window focus pad";
+    control_frame.className = "wm window pad focus";
     row.forEach((col, index) => {
         const name = schema[index].x;
         const label = document.createElement("label");

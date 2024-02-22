@@ -37,8 +37,8 @@
 
 .dos,
 .dos * {
-    --background: #eee;
-    --background-mute: #ddd;
+    --background: #ddd;
+    --background-mute: #ccc;
     --color: #111;
     --color-mute: #333;
     --color-bright: #000;
@@ -61,7 +61,7 @@ body {
     display: flex;
     flex-direction: column;
     user-select: none;
-    transition: all 66.67ms ease-in;
+    transition: all 123ms ease-out;
 }
 
 .wm .shadow {
@@ -72,13 +72,22 @@ body {
     outline: none;
     background: var(--background-mute);
     color: var(--color-mute);
-    padding: 0 2px;
     margin: 0;
     font-size: 0.8rem;
 }
 
-.old .wm.button, .old .wm.menubar {
+.wm.menubar .button {
+    border-right: none;
+}
+
+.wm.button {
+    border: none;
+    padding: 4px 4px 5px 4px;
+}
+
+.old .wm.button {
     border: 3px outset var(--background-mute);
+    padding: 0px 2px;
 }
 
 .wm.button:hover, .wm.menubar:hover {
@@ -93,26 +102,43 @@ body {
     border: 3px inset var(--background-mute);
 }
 
+.wm.input {
+    padding: 7px;
+}
+
+.old .wm.input {
+    padding: 4px;
+    border: 3px outset var(--background-mute);
+}
+
 .wm.simple {
     color: var(--color-mute);
     background: var(--background--mute);
 }
 
 .wm.window {
-    font-size: 16px;
     display: flex;
     flex-direction: column;
+    font-size: 16px;
     background: var(--background);
     opacity: 0.85;
     transition: all 21ms linear;
     color: var(--color);
-    padding: 2px;
-    border: 1px solid var(--background-mute);
+    padding: 0;
+    border: 1px solid var(--color-mute);
 }
 
 .old .wm.window {
-    padding: 0;
     border: 3px outset var(--background-mute);
+}
+
+.wm.frame {
+    margin: 2px;
+    border: 1px solid var(--color-mute);
+}
+
+.old .wm.frame {
+    margin: 0;
 }
 
 .bound {
@@ -141,8 +167,17 @@ body {
     background: none;
     font-size: 12px;
     user-select: none;
-    padding: 3px 6px;
+    padding: 2px 6px;
     opacity: 0.9;
+    height: 20px;
+}
+
+.wm.menubar .clock {
+    margin: 4px
+}
+
+.old .wm.menubar .clock {
+    margin: 0 2px;
 }
 
 .old .wm.toolbar {
@@ -184,6 +219,7 @@ body {
     transition: all 66.67ms ease-in;
     opacity: 1;
     color: var(--color-mute);
+    padding: 0 4px;
 }
 
 .old .wm.toolbar .button {
@@ -191,6 +227,7 @@ body {
     color: #fff;
     background: #f11;
     padding: 0 8px;
+    margin: 0;
 }
 
 .wm.toolbar .button:hover {
@@ -212,9 +249,26 @@ body {
     flex-direction: row;
 }
 
+.wm.menubar > *:first-child {
+    margin-left: 4px;
+}
+
+.wm.menubar > *:last-child {
+    margin-right: 4px;
+}
+
 .wm.menubar .button {
     flex-grow: 100;
     border: none;
+}
+
+.old .wm.menubar .button {
+    border: none;
+}
+
+.old .wm.menubar {
+    border: 3px outset var(--background-mute);
+    margin: 0px!important;
 }
 
 .wm.desktop {
@@ -230,10 +284,12 @@ body {
 .wm.desktop-icon {
     width: fit-content;
     border: none;
+    padding: 6px;
 }
 
 .wm.desktop-icon img {
-    width: 64px;
+    margin-left: 3px;
+    width: 48px;
 }
 
 .wm.desktop-icon:hover img {
