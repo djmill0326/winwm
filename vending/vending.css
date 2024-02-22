@@ -45,6 +45,7 @@ strong {
 #selector a {
     margin-right: 0.5em;
     font-size: 1.333em;
+    color: var(--color-mute);
 }
 
 #selector a:hover {
@@ -82,6 +83,16 @@ thead td {
     z-index: 1;
     top: 86px;
     left:20px;
+}
+
+#editor input {
+    background: var(--background-mute);
+    color: var(--color-bright);
+}
+
+#editor input:disabled {
+    background: var(--background);
+    color: var(--color-mute);
 }
 
 .pad {

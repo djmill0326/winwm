@@ -190,7 +190,7 @@ const create_control_panel = (root_el) => create_control("control.exe", {
         root.className = "wm control";
 
         const theme = window.localStorage.getItem("wm");
-        window.current_theme = parseInt(theme ? theme : 1);
+        window.current_theme = parseInt(theme ? theme : 0);
 
         const determine_theme = (_, inc=true) => {
             window.current_theme += inc;
