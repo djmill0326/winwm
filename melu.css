@@ -82,7 +82,8 @@ body {
 
 .wm.button {
     border: none;
-    padding: 4px 4px 5px 4px;
+    padding: 4px;
+    padding-bottom: 5px;
 }
 
 .old .wm.button {
@@ -172,14 +173,6 @@ body {
     height: 20px;
 }
 
-.wm.menubar .clock {
-    margin: 4px
-}
-
-.old .wm.menubar .clock {
-    margin: 0 2px;
-}
-
 .old .wm.toolbar {
     padding: 0;
     padding-left: 4px;
@@ -249,36 +242,38 @@ body {
     flex-direction: row;
 }
 
-.wm.menubar > *:first-child {
-    margin-left: 4px;
-}
-
-.wm.menubar > *:last-child {
-    margin-right: 4px;
-}
-
 .wm.menubar .button {
     flex-grow: 100;
     border: none;
+    margin-left: 6px;
 }
 
 .old .wm.menubar .button {
     border: none;
+    margin: 0;
 }
 
 .old .wm.menubar {
     border: 3px outset var(--background-mute);
-    margin: 0px!important;
+    padding: 1px!important;
+}
+
+.wm.menubar .clock {
+    margin: 4px 6px;
+}
+
+.old .wm.menubar .clock {
+    margin: 0 2px;
 }
 
 .wm.desktop {
-    padding: 4px;
-    border-top: none;
+    padding: 3px;
     flex-grow: 100;
 }
 
 .old .wm.desktop {
     border: 3px inset var(--background-mute);
+    border-top: none;
 }
 
 .wm.desktop-icon {
