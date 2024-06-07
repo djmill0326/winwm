@@ -1,4 +1,4 @@
-import { negativeScreenX, negativeScreenY } from "./util/offsets.js";
+import { abs } from "./util/offsets.js";
 
 const create_object = (name, proto={}) => ({ ...proto, name });
 
@@ -173,12 +173,12 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org:442/vending", width=0, height=540, interactive=0.1) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org:442/vending", interactive=0.1) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
         root.className = "wm browser panel";
-        add_control(create_frame("BrowserFrame", src, width-negativeScreenX, height-negativeScreenY, interactive), ctx.control);
+        add_control(create_frame("BrowserFrame", src, abs.x_no_border, abs.y_no_border, interactive), ctx.control);
 
         ctx.element = root;
         ctx.root.append(root);

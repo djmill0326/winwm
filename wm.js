@@ -1,5 +1,6 @@
 import { wm, add_control, add_hook, Control } from "./controls.js";
 import { create_file_selector, create_menu_bar } from "./fs.js";
+import { abs } from "./util/offsets.js";
 import termemu from "./termemu.js";
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=()=>{}) => wm.Control(name, Control, {
@@ -120,7 +121,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
         wm_ctl: () => create_window("Control Panel", 800 - 196, 64, 160, 48, false, (ctx) => {
             add_control(wm.ControlPanel(document.body), ctx.control)
         }),
-        Browser: () => create_window("Browser", centered(960, w), centered(540, h), 960, 540, true, (ctx) => {
+        Browser: () => create_window("Browser", centered(abs.x, w), centered(abs.y, h), abs.x, abs.y, true, (ctx) => {
             add_control(wm.Browser(), ctx.control)
         }),
     };
