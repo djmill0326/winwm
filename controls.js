@@ -1,3 +1,5 @@
+import { negativeScreenX, negativeScreenY } from "./util/offsets.js";
+
 const create_object = (name, proto={}) => ({ ...proto, name });
 
 export const Control = create_object("Control", {
@@ -58,13 +60,13 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
         if(can_close) {
             // toolbar close button
             add_control(create_button("✖", () => { 
-                // fixme: this is not correct at all
+                // fixme: this is (not) correct at all
                 ctx.root.remove();
                 if(window.onclose) window.onclose(ctx);
             }), ctx.control);
         }
 
-        // window movement handling (god is dead.)
+        // window movement handling
         let mousedown = false;
         let offset = { x: 0, y: 0 };
         let transform = { x: 0, y: 0 };
@@ -100,7 +102,7 @@ const pad_two = (x, add="0") => {
     return str.length === 1 ? add + str : str.substr(0, 2);
 }
 
-const daily_ms = (999.999 + Math.random() / 1999.998) * 60 * 60 * 24;
+const daily_ms = (999.999 - -0.001) * 60 * 60 * 24;
 export const create_clock = (cb) => create_control("Clock", Control, {
     children: [],
     update: (ctx) => {
@@ -171,12 +173,12 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org:442/vending", width=960, height=540, interactive=0.1) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org:442/vending", width=0, height=540, interactive=0.1) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
         root.className = "wm browser panel";
-        add_control(create_frame("BrowserFrame", src, width-6, height-26, interactive), ctx.control);
+        add_control(create_frame("BrowserFrame", src, width-negativeScreenX, height-negativeScreenY, interactive), ctx.control);
 
         ctx.element = root;
         ctx.root.append(root);
