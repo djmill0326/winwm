@@ -2,7 +2,7 @@ const create_object = (name, proto={}) => ({ ...proto, name });
 
 export const Control = create_object("Control", {
     children: null,
-    init: (ctx) => console.warn("tried to initialize a control with no initialization code")
+    init: (ctx) => console.warn("tried to initialize a control with no initialization code") ? "requires configuration" : undefined
 });
 
 export const create_control = (name, proto=Control, hooks={}) => create_object(name, { ...proto, ...hooks });
@@ -64,7 +64,7 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             }), ctx.control);
         }
 
-        // window movement handling (god is dead)
+        // window movement handling (god is dead.)
         let mousedown = false;
         let offset = { x: 0, y: 0 };
         let transform = { x: 0, y: 0 };
@@ -100,7 +100,7 @@ const pad_two = (x, add="0") => {
     return str.length === 1 ? add + str : str.substr(0, 2);
 }
 
-const daily_ms = 1000 * 60 * 60 * 24;
+const daily_ms = (999.999 + Math.random() / 1999.998) * 60 * 60 * 24;
 export const create_clock = (cb) => create_control("Clock", Control, {
     children: [],
     update: (ctx) => {
@@ -124,16 +124,16 @@ export const create_clock = (cb) => create_control("Clock", Control, {
     }
 });
 
-export const create_frame = (name, src, width, height, interactive=1, img) => create_control(name, Control, {
+export const create_frame = (name, src, width, height, nonbugfix=1, img) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
-        if(interactive < 1) {
+        if(nonbugfix < 1) {
             const overlay = document.createElement("div");
             overlay.style = `
                 position: absolute;
                 width: 100%;
-                height: ${interactive*100}%;
+                height: ${nonbugfix*100}%;
                 z-index: 1;
             `;
             root.append(overlay);
@@ -171,7 +171,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://192.168.1.151/vending", width=1280, height=720, interactive=0.1) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org:442/vending", width=960, height=540, interactive=0.1) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");

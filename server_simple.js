@@ -1,7 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 
-const static = (url, cb, fallback="/about.html", onerror=()=>{}) => {
+const static = (url, cb, fallback="/about.html", onerror=()=>console.log("failed to file.")) => {
     fs.readFile("." + url, 'binary', function(err, data) {
         if(err) {
             onerror(err);
@@ -35,7 +35,7 @@ module.exports = http.createServer((request, response) => {
         switch (file[0]) {
             case "favicon":
                 url = "folder.png";
-                ext_override = "png";
+                ext_override = "ico";
                 break;
             case "index":
                 url = path.slice(0, path.length - 1) + "/index.html"
@@ -49,7 +49,7 @@ module.exports = http.createServer((request, response) => {
                 mime = "text/plain";
                 break;
             case "js":
-                mime = "text/javascript";
+                mime = "application/javascript";
                 break;
             case "css":
                 mime = "text/css";
@@ -57,7 +57,9 @@ module.exports = http.createServer((request, response) => {
             case "png":
             case "jpg":
                 mime = "image/png";
+            case "ico":
                 break;
+                mime = "image/ico";
         }
     }
     console.log(url);

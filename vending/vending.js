@@ -1,12 +1,12 @@
-import { read_managed, get_row } from "./csv.js";
+import { read_managed, get_row } from "../util/csv.js";
 import schema from "./schema.js";
-import mk, { mk_context, mk_append } from "./dist/ui.js";
+import mk, { mk_context, mk_append } from "../util/ui.js";
 
 const program = mk("vending");
 
 // spaghetti logic
 
-const req_location = "http://192.168.1.151/vending/data/";
+const req_location = "http://ehpt.org:442/vending/data/";
 const request = uri => read_managed(req_location + uri, schema);webkitURL
 
 const wrapped = (name, el, to_root=false) => {

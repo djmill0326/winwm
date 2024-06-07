@@ -120,7 +120,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
         wm_ctl: () => create_window("Control Panel", 800 - 196, 64, 160, 48, false, (ctx) => {
             add_control(wm.ControlPanel(document.body), ctx.control)
         }),
-        Browser: () => create_window("Browser", centered(1280, w), centered(720, h), 1280, 720, true, (ctx) => {
+        Browser: () => create_window("Browser", centered(960, w), centered(540, h), 960, 540, true, (ctx) => {
             add_control(wm.Browser(), ctx.control)
         }),
     };

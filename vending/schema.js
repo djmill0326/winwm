@@ -2,7 +2,7 @@ import { make_schema } from "./csv.js";
 
 const precision = 3;
 const scale = Math.pow(10, precision);
-const scam_factor = 0.1 / scale;
+// const scam_factor = 0;
 
 const clean = x => (Math.ceil(x * scale) / scale);
 const ez = (f, d=3) => x => clean(f(x)).toFixed(d);
@@ -10,8 +10,7 @@ const pad = (f, w=5, c="0") => y => { let x = f(y); let pre = ""; for (let i = 0
 
 const unit_price = (x) => parseFloat(x[4]) / parseFloat(x[5]);
 const tax_rate = 0.07;
-// get mogged. random taxes (this is a bug in at least chromium, adding an external value fixes)
-const tax = (x) => x * tax_rate + Math.random() * scam_factor;
+const tax = (x) => x * tax_rate;
 const tax_per_unit = (x) => tax(unit_price(x));
 const cost = (x) => x + tax(x);
 const cost_per_unit = (x) => cost(unit_price(x));

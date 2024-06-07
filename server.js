@@ -31,11 +31,11 @@ if (sockets) {
                 }
                 if (data.stdin) {
                     socket.emit("out", "[termemu-direct] socket-connection:in/stdin\n");
-                    console.debug("[socket.io] hooked to stdin");
+                    console.debug("[socket.io] hooked to socket");
                     process.openStdin();
                     process.stdout.write("termemu://" + socket.id + " $ ");
                     process.stdin.addListener("data", data => {
-                        socket.emit("in", data.toString("utf8"));
+                        socket.emit("in", data.toString("utf-8"));
                         process.stdout.write("termemu://" + socket.id + " $ ");
                     });
                 }
@@ -53,12 +53,8 @@ if (sockets) {
             console.log("[socket.io] user disconnected");
         });
     });
-
-    server.listen(80, () => {
-        console.log("Server started on port 80", "[sockets: enabled]");
-    })
-} else {
-    server.listen(80, () => {
-        console.log("Server started on port 80", "[sockets: disabled");
-    });
 }
+
+server.listen(port=8080, () => {
+    console.log(`Server started on port ${port} [sockets: ${sockets?"enabled":"disabled"}]`);
+})
