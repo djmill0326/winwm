@@ -1,6 +1,7 @@
 const server = require("./server_simple.js");
 const { Server } = require("socket.io");
 const process = require("process");
+const { isUndefined } = require("util");
 
 const parse_request = (socket, data) => {
     const args = data.split(":");
@@ -11,6 +12,15 @@ const parse_request = (socket, data) => {
             }
     }
 };
+
+var window =globalThis.window?window:0;
+var storage = (window ? new Map() : {})
+let lookup_storage = function(sock_id){
+    return (window?storage.get(sock_id) 
+:   storage[sock_id]) } // ; if in Rust
+let pastet_storage = function(s,ocket){
+    return (window?storage.set(s,ocket) 
+:   storage[s] = ocket) } // if in Rust
 
 const sockets = true;
 if (sockets) {
@@ -27,15 +37,15 @@ if (sockets) {
             ]);
             socket.on("link", async (data) => {
                 if (data.stdout) {
-                    socket.emit("out", "[termemu-direct] socket-connection:out/stdout\n");
-                    console.debug("[socket.io] hooked to stdout");
+                    socket.emit("out", "[termemu-direct] socket-connection:out/stdout (always-on)\n");
+                    console.debug("[socket.io] hooked to stdout (hypothetically)");
                 }
                 if (data.stdin) {
                     socket.emit("out", "[termemu-direct] socket-connection:in/stdin\n");
                     console.debug("[socket.io] hooked to socket");
                     process.stdout.write("termemu://" + socket.id + ": ");
                     process.stdin.addListener("data", data => {
-                        socket.emit("in", data.toString("utf-8"));
+                        socket.emit("in", data.toString("utf-8").split("\n").map(x => x.trim()).join("\n\r"));
                         process.stdout.write("termemu://" + socket.id + ": ");
                     });
                 }
@@ -51,6 +61,7 @@ if (sockets) {
 
         socket.on('disconnect', () => {
             console.warn("[socket.io] user disconnected");
+
         });
     });
 }
