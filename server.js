@@ -15,9 +15,10 @@ const parse_request = (socket, data) => {
 const sockets = true;
 if (sockets) {
     const io = new Server(server);
+    process.openStdin();
 
     io.on('connection', (socket) => {
-        console.log("[socket.io] user connected");
+        console.info("[socket.io] user connected");
 
         socket.on("request_link", () => {
             socket.emit("init_link", [
@@ -32,11 +33,10 @@ if (sockets) {
                 if (data.stdin) {
                     socket.emit("out", "[termemu-direct] socket-connection:in/stdin\n");
                     console.debug("[socket.io] hooked to socket");
-                    process.openStdin();
-                    process.stdout.write("termemu://" + socket.id + " $ ");
+                    process.stdout.write("termemu://" + socket.id + ": ");
                     process.stdin.addListener("data", data => {
                         socket.emit("in", data.toString("utf-8"));
-                        process.stdout.write("termemu://" + socket.id + " $ ");
+                        process.stdout.write("termemu://" + socket.id + ": ");
                     });
                 }
             });
@@ -50,11 +50,11 @@ if (sockets) {
         });
 
         socket.on('disconnect', () => {
-            console.log("[socket.io] user disconnected");
+            console.warn("[socket.io] user disconnected");
         });
     });
 }
 
 server.listen(port=8080, () => {
-    console.log(`Server started on port ${port} [sockets: ${sockets?"enabled":"disabled"}]`);
+    console.info(`Server started on port ${port} [sockets: ${sockets?"enabled":"disabled"}]`);
 })

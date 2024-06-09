@@ -113,7 +113,7 @@ export const create_term = () => wm.Control("termemu", {
             if(!has_recv_in) {
                 div.before(terminal);
                 root.before(input);
-                terminal.innerText += data + "\n";
+                terminal.innerText += data;
                 has_recv_in = true;
                 return;
             }
@@ -122,7 +122,7 @@ export const create_term = () => wm.Control("termemu", {
             switch (args[0]) {
                 case "eval":
                     try {
-                        terminal.innerHTML += JSON.stringify(eval(args[1])) + "\n";
+                        terminal.innerHTML += "<i>" + JSON.stringify(eval(args[1])) + "</i>";
                     } catch (err) {
                         terminal.innerHTML += "<b>runtime error: eval failure</b>";
                     }
