@@ -153,18 +153,22 @@ export const create_frame = (name, src, width, height, nonbugfix=1, img) => crea
     }
 });
 
+const proxy_frame = { has_been_used_once: void 0 };
+
 const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     children: [],
     update: (ctx) => {
-        if(!ctx.src) return;
+        console.log(ctx.element);
+        console.log("Attempted frame update: ", ctx.src);
         fetch(ctx.src, {
             mode: "no-cors",
             method: "GET"
-        }).then(res => res.text()).then(text => {
-            ctx.element.innerHTML = text;
-        });
+        }).then(body => body.text().then(html => ctx.element.innerHTML = html)).catch(e => console.log(e))
     },
     init: (ctx) => {
+        if (proxy_frame.has_been_used_once) throw new Error("Limited-Time Item Expired. (permanently)");
+        proxy_frame.has_been_used_once = true;
+        console.log(src);
         const root = document.createElement("div");
         const shadow = root.attachShadow({ mode:"open" });
         ctx.element = shadow;

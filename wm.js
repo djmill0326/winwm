@@ -70,7 +70,6 @@ const focus_window = (ctx) => {
         global_focus.element.forEach(el => el.classList.toggle("focus"));
         global_focus.in_flight = [];
     }, 20);
-    
 }
 
 export const run = (ctx) => {
@@ -96,7 +95,7 @@ export const Full = {
     MenuBar: create_menu_bar,
     run: run,
     util: {
-        centered
+                    centered
     }
 }; window.Wm = Full;
 export default Full;
@@ -117,13 +116,16 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 1, true), ctx.control);
         }),
         wm_term: () => create_window("termemu", centered(640, w), centered(480, h), 640, 480, true, (ctx) => {
-            add_control(termemu(), ctx.control)
+            add_control(termemu(), ctx.control);
         }),
         wm_ctl: () => create_window("Control Panel", 800 - 196, 64, 160, 48, false, (ctx) => {
-            add_control(wm.ControlPanel(document.body), ctx.control)
+            add_control(wm.ControlPanel(document.body), ctx.control);
+        }),
+        wm_burg: () => create_window("'burgh.exe (recursive)", centered(720, w), centered(360, h), 720, 360, false, (ctx) => {
+            add_control(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
         }),
         Browser: () => create_window("Browser", centered(abs.x, w), centered(abs.y, h), abs.x, abs.y, true, (ctx) => {
-            add_control(wm.Browser(), ctx.control)
+            add_control(wm.Browser(), ctx.control);
         }),
     };
     const programs = {};
