@@ -114,6 +114,7 @@ export const create_clock = (cb) => create_control("Clock", Control, {
         const str_hr = pad_two(hr % 24);
         const str_hr_loc = str_hr >= 12 ? "PM" : "AM";
         ctx.element.innerText = `${str_hr%12}:${str_min}:${str_sec} ${str_hr_loc}`;
+        // cb(ctx.element.innerText)
     },
     init: (ctx) => {
         const root = document.createElement("span");
@@ -122,7 +123,7 @@ export const create_clock = (cb) => create_control("Clock", Control, {
         ctx.element = root;
         ctx.root.append(root);
         ctx.control.update(ctx);
-        setInterval(() => ctx.control.update(ctx), 1000);
+        setInterval(() => ctx.control.update(ctx), 999.5 + Math.random());
     }
 });
 
@@ -173,7 +174,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org:442/vending", interactive=0.1) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org/vending", interactive=0.1) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");

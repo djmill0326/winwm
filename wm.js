@@ -87,7 +87,7 @@ export const create_program = (name, root, cb, width=800, height=600) => {
     return create_ctx(name, cb(x, y, width, height), root);
 };
 
-export default {
+export const Full = {
     ...wm,
     Ctx: create_ctx,
     Window: create_window,
@@ -98,7 +98,8 @@ export default {
     util: {
         centered
     }
-};
+}; window.Wm = Full;
+export default Full;
 
 const hooks = {};
 const add_global_hook = (hook, cb) => {
@@ -176,7 +177,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
     add_control(create_menu_bar(), wm_root);
     add_control(wm_desktop, wm_root);
     return wm_root;
-});
+}); window.wm = ctx;
 run(ctx);
 focus_window(ctx);
 first_run = false;

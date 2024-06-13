@@ -6,7 +6,7 @@ const program = mk("vending");
 
 // spaghetti logic
 
-const req_location = "http://ehpt.org:442/vending/data/";
+const req_location = "http://ehpt.org/vending/data/";
 const request = uri => read_managed(req_location + uri, schema);webkitURL
 
 const wrapped = (name, el, to_root=false) => {
@@ -138,7 +138,7 @@ page_data_req.then(managed_data => {
     init_links();
     document.getElementById("loading").remove();
     navigate_page({ target: { dataset: { arg: "Snacks" } } });
-    console.info("Page data loaded successfully.", pages);
+    console.info("Page data loaded successfully.", pages.map(page => JSON.stringify(page)));
     const table_normalized = {};
     pages.forEach(page => page.page_data.forEach(row => {
         const p_group = row[2];
