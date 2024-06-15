@@ -11,6 +11,7 @@ export const create_control = (name, proto=Control, hooks={}) => create_object(n
 
 export const create_button = (name, onclick) => create_control("Button", Control, {
     children: [],
+    hooks: ["click"],
     init: (ctx) => {
         const root = document.createElement("button");
         root.innerText = name;
@@ -33,7 +34,21 @@ export const spool_animations = () => {
     requestAnimationFrame(spool_animations);
 };
 
-const anim_ms = 1000/48;
+const test_eval = (loops=1000000) => {
+    let hotloop = loops;
+    let times = []; // time taken (adjusted with zero-offset from start of evaluation)
+    let more_times = []; // deviation (deviance)
+    let cum_avg = 0; // cum-average (cumulative)
+    let j = 1; // i+1 offset (register-usage attempt)
+    for (const time = performance.now(); hotloop--; times.push(performance.now() - time));
+     /* need to track an average over time, reasonably accurately. */
+    more_times = times.reduce((p, v, i) => {
+        cum_avg = (cum_avg * i + ((v+p) / 2)) / ++j;
+        return v; // also is [insert x]
+    }, times[loops-1]);
+};
+
+const anim_ms = 1000/(48*2);
 export const debounce = (f, ms=anim_ms) => {
     animation_queue.set(f, { f, queue: [] });
     let disabled = false;
@@ -178,7 +193,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org/vending", interactive=0.1) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org/", interactive=0.05) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
@@ -234,7 +249,7 @@ const create_control_panel = (root_el) => create_control("control.exe", {
     }
 })
 
-export const add_control = (control, parent, to_front) => {
+export const add_control = (control, parent, to_front=false) => {
     if(to_front) {
         parent.children = [control, ...parent.children];
     } else {
@@ -242,7 +257,7 @@ export const add_control = (control, parent, to_front) => {
     }
 }
 
-export const add_hook = (control, hook, cb) => {
+export const add_hook = (control, hook, cb=()=>{}) => {
     control[hook] = cb;
 }
 

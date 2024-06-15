@@ -1,5 +1,5 @@
 import { wm, add_control, add_hook, Control } from "./controls.js";
-import { create_file_selector, create_menu_bar } from "./fs.js";
+import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
 import { abs } from "./util/offsets.js";
 import termemu from "./termemu.js";
 
@@ -18,12 +18,6 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
         root.className = "wm window shadow";
         ctx.element = root;
         add_control(wm.Toolbar(name, ctx.control, can_close), ctx.control, true);
-
-        ctx.control.hooks.forEach(hook => {
-            root.addEventListener(hook, (ev) => {
-                hooks[hook].forEach(cb => cb(ctx, ev))
-            });
-        });
 
         cb(ctx);
         ctx.root.append(root);
@@ -44,6 +38,11 @@ export const create_ctx = (name, control, el_root) => wm.Object(name, {
 
 const init_barebones = (ctx) => {
     ctx.control.init(ctx);
+    ctx.control.hooks.forEach(hook => {
+        root.addEventListener(hook, (ev) => {
+            hooks[hook].forEach(cb => cb(ctx, ev))
+        });
+    });
 };
 
 const init_children = (ctx) => {
@@ -69,7 +68,7 @@ const focus_window = (ctx) => {
         global_focus.element = global_focus.in_flight;
         global_focus.element.forEach(el => el.classList.toggle("focus"));
         global_focus.in_flight = [];
-    }, 20);
+    }, 0);
 }
 
 export const run = (ctx) => {
@@ -87,23 +86,18 @@ export const create_program = (name, root, cb, width=800, height=600) => {
 };
 
 export const Full = {
-    ...wm,
-    Ctx: create_ctx,
+    ...wm, util: { centered },
+    Ctx: create_ctx, run: run,
     Window: create_window,
     Program: create_program,
-    FileSelector: create_file_selector,
-    MenuBar: create_menu_bar,
-    run: run,
-    util: {
-                    centered
-    }
+    FileSelector: cfs, MenuBar: cmb
 }; window.Wm = Full;
 export default Full;
 
-const hooks = {};
-const add_global_hook = (hook, cb) => {
-    if(!hooks[hook]) hooks[hook] = [];
-    hooks[hook].push(cb);
+const hooks = {}; // don't use this unless you actually know why I'm writing this comment     /* unreachable code (ts-in-js) */
+const register_hook = (name, cb=_=>{ throw new Error("[idiot-detector] unconfigured callback?"); return typeof object }) => {
+    if(!hooks[name]) hooks[name] = [];
+    hooks[name].push(cb);
 };
 
 let first_run = true;
@@ -131,7 +125,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
     const programs = {};
     const open_programs = new Set();
 
-    add_global_hook("mousedown", focus_window);
+    register_hook("mousedown", focus_window);
     
     const wm_root = create_window("John's iMac - Desktop", x, y, w, h, false);
     const wm_desktop = wm.Control("Desktop", Control, {
