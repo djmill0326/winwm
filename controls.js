@@ -11,7 +11,6 @@ export const create_control = (name, proto=Control, hooks={}) => create_object(n
 
 export const create_button = (name, onclick) => create_control("Button", Control, {
     children: [],
-    hooks: ["click"],
     init: (ctx) => {
         const root = document.createElement("button");
         root.innerText = name;
@@ -44,7 +43,7 @@ const test_eval = (loops=1000000) => {
     let j = 1; // i+1 offset (register-usage attempt)
     for (const time = performance.now(); hotloop--; times.push(performance.now() - time));
      /* need to track an average over time, reasonably accurately. */
-    more_times = times.reduce((p, v, i) => {
+    more_times = times.map((p, v, i) => {
         cum_avg = (cum_avg * i + ((v+p) / 2)) / ++j;
         return v; // also is [insert x]
     }, times[loops-1]);
@@ -196,7 +195,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org/", interactive=0.05) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org/", interactive=0.1) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");

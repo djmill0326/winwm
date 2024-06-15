@@ -38,8 +38,8 @@ export const create_ctx = (name, control, el_root) => wm.Object(name, {
 
 const init_barebones = (ctx) => {
     ctx.control.init(ctx);
-    ctx.control.hooks.forEach(hook => {
-        root.addEventListener(hook, (ev) => {
+    if (ctx.control.hooks) ctx.control.hooks.forEach(hook => {
+        ctx.root.addEventListener(hook, (ev) => {
             hooks[hook].forEach(cb => cb(ctx, ev))
         });
     });
@@ -170,7 +170,7 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             wm.spool_animations();
         }
     });
-    add_control(create_menu_bar(), wm_root);
+    add_control(cmb(), wm_root);
     add_control(wm_desktop, wm_root);
     return wm_root;
 }); window.wm = ctx;
