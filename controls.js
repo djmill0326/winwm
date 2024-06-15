@@ -34,6 +34,8 @@ export const spool_animations = () => {
     requestAnimationFrame(spool_animations);
 };
 
+const zip = (...lists) => i => lists.map(list => list[i]);
+
 const test_eval = (loops=1000000) => {
     let hotloop = loops;
     let times = []; // time taken (adjusted with zero-offset from start of evaluation)
@@ -46,6 +48,7 @@ const test_eval = (loops=1000000) => {
         cum_avg = (cum_avg * i + ((v+p) / 2)) / ++j;
         return v; // also is [insert x]
     }, times[loops-1]);
+    return zip(times, more_times);
 };
 
 const anim_ms = 1000/(48*2);
