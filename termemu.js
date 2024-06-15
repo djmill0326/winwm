@@ -1,6 +1,31 @@
 import wm from "./wm.js";
 import "/socket.io/socket.io.js";
 
+let  $       = 0;
+const strmap = new Map();
+const catc   = new Map();
+const cat    = strtocat => new Function("return " + strtocat);
+const catadd = str => { if (catc.has(strmap.get(str))) return; strmap.set(str, $); catc.set($, cat(str)); return $++; };
+const catrem = str => { const v = strmap.get(str); catc.delete(v); strmap.delete(str) };
+const catdel = idx => { return catc.delete(idx) };
+const catcal = (id, ...xargs) => { const f = catc.get(id); return f(...xargs) }
+const cached = str => { const id = catadd(str); setTimeout(() => catdel(id), 0); return catcal(id) }
+
+export const el = { ref: null, log: [] }, nothing = "", is_empty = x => x.length === nothing.length;
+const runtime = (f, l=80) => {
+    return (...x) => { try { return f(...x); } catch (e) {
+        const namelength = e.name.length;
+        const msglength  = namelength + e.message.length;
+        const length_returnable = Math.min(msglength, l-3);
+        let msg = nothing;
+        if (length_returnable < msglength) msg = `Error<${e.name} — ${e.message.substr(0, (l-6) - namelength)}>...`;
+        else msg = `Error<${e.name} — ${e.message}`;
+        if(el.ref && el.ref.innerHTML) el.ref.innerHTML += "<b color='c e'>runtime error: eval failure</b>";
+        console.warn("[WARN] downgraded(captured) Error<" + e.name + ">");
+        el.log.push(msg);
+    };
+}}, evl = runtime(cached);
+
 export const create_term = () => wm.Control("termemu", {
     children: [],
     init: (ctx) => {
@@ -72,24 +97,32 @@ export const create_term = () => wm.Control("termemu", {
                 }
                 root.append(el);
             });
-            let i_give_you_one_history = null;
+            let hiStorage = "";
             input.addEventListener("keypress", (ev) => {
-                if(ev.key === "Enter") {
-                    socket.emit("in", input.value);
-                    terminal.innerText += "termemu://" + socket.id + " 🗣️ " + input.value + "\n";
+                if (!ev.isTrusted) throw new Error("untrusted user-agent 'faketouched' a key.");
+                if(ev.key === "Enter") { // sending message.
+                    socket.emit("in", input.value.trimEnd());
+                    const b = document.createElement("b");
+                    b.innerHTML = `<a href='#clicked_on_terminal_socket_id' class='c m'>termemu-${socket.id}</a> 🗣️ ${input.value}`;
+                    b.className = "c i";
+                    terminal.append(b);
                     autoscroll(terminal);
+                    hiStorage = input.placeholder;
                     input.placeholder = input.value;
                     input.value = "";
-                    
                 }
-                if(ev.key === "<") {
-                    i_give_you_one_history = input.value;
+                if(ev.key === "<") { // taking from the left.
+                    if (is_empty(input.value)) input.value = 
+                        is_empty(hiStorage) ? input.placeholder : hiStorage;
+                    if(hiStorage === input.value) return;
+                    hiStorage = input.value;
                     input.value = input.placeholder;
                     ev.preventDefault();
                 }
-                if(ev.key === ">") {
+                if(ev.key === ">") { // taking from the right.
+                    if (input.value === input.placeholder) return;
                     input.placeholder = input.value;
-                    input.value = i_give_you_one_history;
+                    input.value = hiStorage;
                     ev.preventDefault();
                 }
             });
@@ -97,7 +130,6 @@ export const create_term = () => wm.Control("termemu", {
         });
         
         let has_term = false;
-        let has_recv_in = false;
         
         socket.on("out", (data) => {
             if (!has_term) {
@@ -105,36 +137,31 @@ export const create_term = () => wm.Control("termemu", {
                 root.before(input);
                 has_term = true;
             }
-            terminal.innerText += data;
+            terminal.innerHTML += "<i class='c x'>" + data + "</i>";
             autoscroll(terminal);
         });
         
         socket.on("in", (data) => {
-            if(!has_recv_in) {
+            if(!has_term) {
                 div.before(terminal);
                 root.before(input);
-                terminal.innerText += data;
-                has_recv_in = true;
+                has_term = true;
+                terminal.innerHTML += "<i class='c x'>" + data + "</i>";
                 return;
             }
-            terminal.innerText += "termemu-direct 🗣️ " + data;
+            terminal.innerHTML += "<span><a href='#clicked_on_terminal_username' class='c m'>termemu-direct</a> 🗣️ " + data.split("\n")[0].trim() + "</span>";
             const args = data.split(":");
             switch (args[0]) {
                 case "eval":
-                    try {
-                        terminal.innerHTML += "<i>" + JSON.stringify(eval(args[1])) + "</i>";
-                    } catch (err) {
-                        terminal.innerHTML += "<b>runtime error: eval failure</b>";
-                    }
-                    break;
+                    const output = evl(args[1]);
+                    terminal.innerHTML += `<i class='c w'>${output}</i>`; break;
                 default:
-                    if (args.length > 1) {
-                        terminal.innerHTML += "<b>runtime error: unexpected string</b>";
-                        break;
-                    }
+                    if (args.length > 1) terminal.innerHTML += "<b class='c e'>runtime error: unexpected string</b>";
             }
             autoscroll(terminal);
         });
+
+        socket.on("disconnect", () => ctx.element.remove());
 
         ctx.element = wrapper;
         ctx.root.append(wrapper);

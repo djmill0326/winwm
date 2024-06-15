@@ -26,6 +26,12 @@
     background: linear-gradient(var(--shdark), var(--shlite));
 }
 
+   .c.m { color: darkslategray ; }
+   .c.i { color: aliceblue     ; }
+   .c.w { color: palegoldenrod ; }
+   .c.e { color: darksalmon    ; }
+   .c.x { color: aquamarine    ; }
+
 .one,
 .one * {
     --background: #111;

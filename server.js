@@ -1,6 +1,7 @@
 const server = require("./server_simple.js");
 const { Server } = require("socket.io");
 const process = require("process");
+const readline = require("readline");
 const { isUndefined } = require("util");
 
 const parse_request = (socket, data) => {
@@ -11,6 +12,15 @@ const parse_request = (socket, data) => {
                 console.warn("runtime error: unexpected string");
             }
     }
+};
+
+let prompt;
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const take_input = (socket) => {
+    rl.question(prompt, data => {
+        take_input(socket);
+        socket.emit("in", data);
+    });
 };
 
 var window =globalThis.window?window:0;
@@ -25,10 +35,10 @@ let pastet_storage = function(s,ocket){
 const sockets = true;
 if (sockets) {
     const io = new Server(server);
-    process.openStdin();
 
     io.on('connection', (socket) => {
         console.info("[socket.io] user connected");
+        prompt = "termemu:" + socket.id + " % ";
 
         socket.on("request_link", () => {
             socket.emit("init_link", [
@@ -37,31 +47,28 @@ if (sockets) {
             ]);
             socket.on("link", async (data) => {
                 if (data.stdout) {
-                    socket.emit("out", "[termemu-direct] socket-connection:out/stdout (always-on)\n");
+                    socket.emit("out", "[termemu-direct] socket-connection:out/stdout (useless)\n");
                     console.debug("[socket.io] hooked to stdout (hypothetically)");
                 }
                 if (data.stdin) {
-                    socket.emit("out", "[termemu-direct] socket-connection:in/stdin\n");
+                    socket.emit("out", "[termemu-direct] socket-connection:in/stdin (cmd_socket)\n");
                     console.debug("[socket.io] hooked to socket");
-                    process.stdout.write("termemu://" + socket.id + ": ");
-                    process.stdin.addListener("data", data => {
-                        socket.emit("in", data.toString("utf-8").split("\n").map(x => x.trim()).join("\n\r"));
-                        process.stdout.write("termemu://" + socket.id + ": ");
-                    });
+                    take_input(socket);
                 }
             });
             socket.on("out", (data) => {
-                process.stdout.write("[termemu://" + socket.id + "] " + data + "\n");
+                rl.write("\n[termemu:" + socket.id + "] " + data);
             });
             socket.on("in", (data) => {
-                process.stdout.write("termemu-direct $ " + data + "\n");
+                rl.setPrompt(prompt); rl.prompt(true);
+                rl.pause(); console.log(data);
                 parse_request(socket, data);
+                take_input(socket);
             });
         });
 
         socket.on('disconnect', () => {
             console.warn("[socket.io] user disconnected");
-
         });
     });
 }

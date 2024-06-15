@@ -28,7 +28,7 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
         cb(ctx);
         ctx.root.append(root);
     },
-    dimensions: (ctx) => ({ 
+    dimensions: (ctx) => ({
         x: ctx.element.attributeStyleMap.get("left"), 
         y: ctx.element.attributeStyleMap.get("top"), 
         width: ctx.element.attributeStyleMap.get("width"), 
@@ -118,10 +118,10 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
         wm_term: () => create_window("termemu", centered(640, w), centered(480, h), 640, 480, true, (ctx) => {
             add_control(termemu(), ctx.control);
         }),
-        wm_ctl: () => create_window("Control Panel", 800 - 196, 64, 160, 48, false, (ctx) => {
+        wm_ctl: () => create_window("Control Panel", 800 - 192, 72, 160, 48, false, (ctx) => {
             add_control(wm.ControlPanel(document.body), ctx.control);
         }),
-        wm_burg: () => create_window("'burgh.exe (recursive)", centered(720, w), centered(360, h), 720, 360, false, (ctx) => {
+        wm_burg: () => create_window("'burgh.exe (recursive)", centered(801, w), centered(184, h), 800, 185, true, (ctx) => {
             add_control(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
         }),
         Browser: () => create_window("Browser", centered(abs.x, w), centered(abs.y, h), abs.x, abs.y, true, (ctx) => {
