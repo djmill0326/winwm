@@ -19,9 +19,16 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
         ctx.element = root;
         add_control(wm.Toolbar(name, ctx.control, can_close), ctx.control, true);
 
+        ctx.control.hooks.forEach(hook => {
+            root.addEventListener(hook, (ev) => {
+                hooks[hook].forEach(cb => cb(ctx, ev))
+            });
+        });
+
         cb(ctx);
         ctx.root.append(root);
     },
+
     dimensions: (ctx) => ({
         x: ctx.element.attributeStyleMap.get("left"), 
         y: ctx.element.attributeStyleMap.get("top"), 
@@ -36,14 +43,7 @@ export const create_ctx = (name, control, el_root) => wm.Object(name, {
     control
 });
 
-const init_barebones = (ctx) => {
-    ctx.control.init(ctx);
-    if (ctx.control.hooks) ctx.control.hooks.forEach(hook => {
-        ctx.root.addEventListener(hook, (ev) => {
-            hooks[hook].forEach(cb => cb(ctx, ev))
-        });
-    });
-};
+const init_barebones = (ctx) => ctx.control.init(ctx);
 
 const init_children = (ctx) => {
     ctx.control.children.forEach(ctl => {
@@ -59,6 +59,7 @@ const global_focus = {
 };
 
 const focus_window = (ctx) => {
+    console.log("[FocusHandler] Window focused.", ctx.control);
     ctx.element.attributeStyleMap.set("z-index", global_focus.z);
     global_focus.in_flight.push(ctx.element);
     if (global_focus.in_flight.length !== 1) return;
@@ -122,10 +123,9 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             add_control(wm.Browser(), ctx.control);
         }),
     };
+
     const programs = {};
     const open_programs = new Set();
-
-    register_hook("mousedown", focus_window);
     
     const wm_root = create_window("John's iMac - Desktop", x, y, w, h, false);
     const wm_desktop = wm.Control("Desktop", Control, {
@@ -170,8 +170,12 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             wm.spool_animations();
         }
     });
+
+    register_hook("mousedown", focus_window);
+
     add_control(cmb(), wm_root);
     add_control(wm_desktop, wm_root);
+
     return wm_root;
 }); window.wm = ctx;
 run(ctx);

@@ -33,24 +33,7 @@ export const spool_animations = () => {
     requestAnimationFrame(spool_animations);
 };
 
-const zip = (...lists) => i => lists.map(list => list[i]);
-
-const test_eval = (loops=1000000) => {
-    let hotloop = loops;
-    let times = []; // time taken (adjusted with zero-offset from start of evaluation)
-    let more_times = []; // deviation (deviance)
-    let cum_avg = 0; // cum-average (cumulative)
-    let j = 1; // i+1 offset (register-usage attempt)
-    for (const time = performance.now(); hotloop--; times.push(performance.now() - time));
-     /* need to track an average over time, reasonably accurately. */
-    more_times = times.map((p, v, i) => {
-        cum_avg = (cum_avg * i + ((v+p) / 2)) / ++j;
-        return v; // also is [insert x]
-    }, times[loops-1]);
-    return zip(times, more_times);
-};
-
-const anim_ms = 1000/(48*2);
+const anim_ms = 1000/48;
 export const debounce = (f, ms=anim_ms) => {
     animation_queue.set(f, { f, queue: [] });
     let disabled = false;
@@ -83,31 +66,35 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             }), ctx.control);
         }
 
-        // window movement handling
-        let mousedown = false;
-        let offset = { x: 0, y: 0 };
-        let transform = { x: 0, y: 0 };
-        root.addEventListener("mousedown", (ev) => {
-            offset.x = ev.x - transform.x;
-            offset.y = ev.y - transform.y;
-            mousedown = true;
+        // new window movement handling
+        const move = { x: 0, y: 0, xx: 0, xy: 0 };
+        let rect = root.getBoundingClientRect();
+        let moving = false;
+
+        root.addEventListener("mousedown", event => {
+            [move.x, move.y] = [event.offsetX - move.xx, event.offsetY - move.xy];
+            rect = root.getBoundingClientRect();
+            moving = true;
         });
-        document.body.addEventListener("click", (ev) => {
-            if(mousedown) {
-                transform.x = ev.x - offset.x;
-                transform.y = ev.y - offset.y;
-                mousedown = false;
-            }
-        });
-        document.body.addEventListener("mousemove", debounce((ev) => {
-            if(mousedown) {
-                const transform =  new CSSTransformValue([new CSSTranslate(
-                    CSS.px(ev.x - offset.x), 
-                    CSS.px(ev.y - offset.y)
-                )]);
-                ctx.root.attributeStyleMap.set("transform", transform);
-            }
+
+        document.addEventListener("mousemove", debounce(event => {
+            if (!moving) return;
+
+            const [x, y] = [move.xx, move.xy] = [
+                event.clientX - rect.x - move.x,
+                event.clientY - rect.y - move.y
+            ];
+
+            const translate = new CSSTransformValue([ new CSSTranslate(CSS.px(x), CSS.px(y)) ]);
+
+            ctx.root.attributeStyleMap.set("transform", translate);
         }));
+
+        document.addEventListener("click", event => {
+            [move.x, move.y] = [event.offsetX, event.offsetY];
+            rect = root.getBoundingClientRect();
+            moving = false;
+        });
 
         ctx.element = root;
         ctx.root.append(root);
