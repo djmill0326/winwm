@@ -33,7 +33,7 @@ export const spool_animations = () => {
     requestAnimationFrame(spool_animations);
 };
 
-const anim_ms = 1000/48;
+const anim_ms = 1000/96;
 export const debounce = (f, ms=anim_ms) => {
     animation_queue.set(f, { f, queue: [] });
     let disabled = false;
