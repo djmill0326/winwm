@@ -58,9 +58,7 @@ export const create_term = () => wm.Control("termemu", {
         const div = document.createElement("div");
         div.className = "wm grow clear";
         
-        const autoscroll = (el) => {
-            el.scrollTo(0, el.scrollHeight - el.clientHeight)
-        };
+        const autoscroll = (el) => el.scrollTo(0, el.scrollHeight - el.clientHeight);
         
         autoscroll(terminal);
         
@@ -158,7 +156,7 @@ export const create_term = () => wm.Control("termemu", {
                 default:
                     if (args.length > 1) terminal.innerHTML += "<b class='c e'>runtime error: unexpected string</b>";
             }
-            autoscroll(terminal);
+            autoscroll(terminal, socket);
         });
 
         socket.on("disconnect", () => ctx.element.remove());

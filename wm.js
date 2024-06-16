@@ -60,7 +60,7 @@ const global_focus = {
 
 const focus_window = (ctx) => {
     console.log("[FocusHandler] Window focused.", ctx.control);
-    ctx.element.attributeStyleMap.set("z-index", global_focus.z);
+    ctx.element.style["z-index"] = global_focus.z;
     global_focus.in_flight.push(ctx.element);
     if (global_focus.in_flight.length !== 1) return;
     setTimeout(() => {
