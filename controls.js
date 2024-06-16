@@ -1,6 +1,9 @@
 import { abs } from "./util/offsets.js";
 
-const create_object = (name, proto={}) => ({ ...proto, name });
+const create_object = (name, proto) => {
+    proto.name = Object.seal(name);
+    return proto;
+};
 
 export const Control = create_object("Control", {
     children: null,
@@ -9,13 +12,14 @@ export const Control = create_object("Control", {
 
 export const create_control = (name, proto=Control, hooks={}) => create_object(name, { ...proto, ...hooks });
 
-export const create_button = (name, onclick) => create_control("Button", Control, {
+export const create_button = (name, onclick, onmousedown) => create_control("Button", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("button");
         root.innerText = name;
         root.className = "wm button";
         root.onclick = onclick;
+        root.onmousedown = onmousedown;
 
         ctx.element = root;
         ctx.root.append(root);
@@ -38,6 +42,7 @@ export const debounce = (f, ms=anim_ms) => {
     animation_queue.set(f, { f, queue: [] });
     let disabled = false;
     return (ev) => {
+        document.createElement("div")
         if (disabled) return;
         disabled = true;
         setTimeout(() => disabled = false, ms);
@@ -57,18 +62,19 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
         root.append(name);
         ctx.element = root;
 
+        let pend = false; // should the window be prevented from moving?
+
         if(can_close) {
             // toolbar close button
             add_control(create_button("✖", () => { 
-                // fixme: this is (not) correct at all
                 ctx.root.remove();
                 if(window.onclose) window.onclose(ctx);
-            }), ctx.control);
+            }, () => pend = true), ctx.control);
         }
 
         // new window movement handling
         const move = { x: 0, y: 0, xx: 0, xy: 0 };
-        let rect = root.getBoundingClientRect();
+          let rect = root.getBoundingClientRect();
         let moving = false;
 
         root.addEventListener("mousedown", event => {
@@ -78,7 +84,7 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
         });
 
         document.addEventListener("mousemove", debounce(event => {
-            if (!moving) return;
+            if (!moving || pend) return;
 
             const [x, y] = [move.xx, move.xy] = [
                 event.clientX - rect.x - move.x,
@@ -94,6 +100,7 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             [move.x, move.y] = [event.offsetX, event.offsetY];
             rect = root.getBoundingClientRect();
             moving = false;
+            pend = false;
         });
 
         ctx.element = root;
@@ -163,7 +170,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     children: [],
     update: (ctx) => {
         console.log(ctx.element);
-        console.log("Attempted frame update: ", ctx.src);
+        console.log("Attempting frame update: ", ctx.src);
         fetch(ctx.src, {
             mode: "no-cors",
             method: "GET"

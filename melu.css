@@ -67,7 +67,7 @@ body {
     display: flex;
     flex-direction: column;
     user-select: none;
-    transition: all 123ms ease-out;
+    transition: all 222.222ms ease-out;
 }
 
 .wm .shadow {
@@ -224,7 +224,7 @@ body {
 .old .wm.toolbar .button {
     border-left: 3px outset var(--background-mute);
     color: #fff;
-    background: #f11;
+    background: #f12;
     padding: 0 8px;
     margin: 0;
 }
@@ -239,9 +239,9 @@ body {
 }
 
 .old .wm.toolbar .button:active {
-    color: #f11;
-    border-left: none;
-    outline: 3px inset var(--background-mute);
+    opacity: 1;
+    color: #f00;
+    border-bottom: #f00 3px;
 }
 
 .wm.menubar {

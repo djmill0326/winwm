@@ -54,7 +54,7 @@ const init_children = (ctx) => {
 
 const global_focus = {
     element: [],
-    z: 1,
+    z: 0,
     in_flight: []
 };
 
