@@ -20,7 +20,7 @@ export const create_button = (name, onclick, onmousedown) => create_control("But
         root.className = "wm button";
         root.onclick = onclick;
         root.onmousedown = onmousedown;
-
+        
         ctx.element = root;
         ctx.root.append(root);
     }
@@ -105,6 +105,9 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
 
         ctx.element = root;
         ctx.root.append(root);
+    },
+    update_title: (ctx, name) => {
+        ctx.root.children[0].innerText = name;
     }
 });
 
@@ -206,12 +209,9 @@ const change_ico = (cls, to="folder.png") => {
     for (let i = 0; i < icons.length; i++) icons[i].src = to;
 }
 
-const create_control_panel = (root_el) => create_control("control.exe", {
+const create_control_panel = (root_el, just_init=false) => create_control("control.exe", {
     children: [],
     init: (ctx) => {
-        const root = document.createElement("div");
-        root.className = "wm control panel";
-
         const theme = window.localStorage.getItem("wm");
         window.current_theme = parseInt(theme ? theme : 0);
 
@@ -235,8 +235,13 @@ const create_control_panel = (root_el) => create_control("control.exe", {
                 frame.contentWindow.postMessage("theme:=" + window.current_theme);
             });
         };
-
+        
         determine_theme(0, false);
+        window.determine_theme = determine_theme;
+        if(just_init) return;
+
+        const root = document.createElement("div");
+        root.className = "wm control panel";
         
         add_control(create_button("Switch Theme", determine_theme), ctx.control);
 

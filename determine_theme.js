@@ -14,4 +14,5 @@ const determine_theme = (root, theme) => {
 const theme = window.localStorage.getItem("wm");
 if (theme) determine_theme(document.body, parseInt(theme));
 
+window.determine_theme = determine_theme;
 export default determine_theme;

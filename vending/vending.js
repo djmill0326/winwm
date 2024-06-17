@@ -1,13 +1,14 @@
-import { read_managed, get_row } from "../util/csv.js";
-import schema from "./schema.js";
+import { create_program, create_window, create_root, managed_run } from "../vending_compat.js";
+import { add_hook } from "../controls.js";
 import mk, { mk_context, mk_append } from "../util/ui.js";
-
+import { read_managed, get_row } from "./csv.js";
+import schema from "./schema.js";
 const program = mk("vending");
 
-// spaghetti logic
+// frankenstein-ass program
 
 const req_location = "http://ehpt.org/vending/data/";
-const request = uri => read_managed(req_location + uri, schema);webkitURL
+const request = uri => read_managed(req_location + uri, schema);
 
 const wrapped = (name, el, to_root=false) => {
     if(to_root) program.append(el);
@@ -57,13 +58,19 @@ const create_table = (name, page_data) => {
     return root;
 }
 
-const editor = { active: false, page: null, row: null };
-const editor_frame = document.getElementById("editor");
+const editor = { active: false, page: null, row: null, frame: null };
+const editor_frame_old = document.getElementById("editor");
+const editor_window = () => create_window("VendingEditor", 0, 0, 420, 420, true, ctx => {
+    add_hook(ctx.control, "onclose", () => dirty());
+    // entirely incomplete, whole system needs rewriting.
+});
+
 const open_editor = (page, index, row_el) => {
     dirty();
     editor.active = true;
     editor.page = page;
     editor.row = index;
+    run(window.wm.programs.edit());
     const row = window.pages[page].page_data[index];
     const root = document.createElement("section");
     root.className = "wm window focus";
@@ -97,7 +104,7 @@ const open_editor = (page, index, row_el) => {
         control_frame.append(label, root);
     });
     root.append(heading, control_frame);
-    editor_frame.append(root);
+    (editor.frame ? editor.frame : editor_frame_old).append(root);
 }
 
 const selector = document.getElementById("selector");
@@ -109,7 +116,7 @@ const navigate_page = ev => {
         if (window.active_page) window.active_page.root.remove();
         window.active_page = page;
         frame.append(page.root);
-        console.debug("selected page", page);
+        console.info(`[Vending] selected page *${page.name}*`, page);
     }
 };
 
@@ -138,7 +145,8 @@ page_data_req.then(managed_data => {
     init_links();
     document.getElementById("loading").remove();
     navigate_page({ target: { dataset: { arg: "Snacks" } } });
-    console.info("Page data loaded successfully.", pages.map(page => JSON.stringify(page)));
+    console.info("Page data loaded successfully.");
+    pages.forEach(page => console.debug(page))
     const table_normalized = {};
     pages.forEach(page => page.page_data.forEach(row => {
         const p_group = row[2];
@@ -169,12 +177,17 @@ const update_one = (page, index) => {
 };
 
 const dirty = () => {
-    if (editor_frame.children.length !== 0) {
+    if (editor.active) {
+        editor.active = false;
         // note: there's an interesting bug here where the original computed values remain
         // within the editor even if they should've changed. i'm not fixing it. it's cool
-        editor.active = false;
-        editor_frame.children[0].remove();
+        if (editor_frame_old.children.length !== 0) editor_frame_old.children[0].remove();
         update_one(window.pages[editor.page], editor.row);
         console.info("Updated editor state.", editor);
     }
 };
+
+const init = create_root({ edit: editor_window }, sys => sys.programs.edit);
+const ctx = create_program("vending-compat", document.body, init, 350, 420);
+const run = managed_run(ctx); run();
+const el = document.querySelector(".wm.desktop.row").attributeStyleMap.set("flex-direction", "row");

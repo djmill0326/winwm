@@ -1,7 +1,5 @@
 import { wm, add_control, add_hook, Control } from "./controls.js";
 import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
-import { abs } from "./util/offsets.js";
-import termemu from "./termemu.js";
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=ctx=>{}) => wm.Control(name, Control, {
     children: [],
@@ -16,6 +14,7 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
             top: ${y}px;
         `;
         root.className = "wm window shadow";
+        if(ctx.name) root.dataset.prg = ctx.name;
         ctx.element = root;
         add_control(wm.Toolbar(name, ctx.control, can_close), ctx.control, true);
 
@@ -39,7 +38,7 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
 export const create_ctx = (name, control, el_root) => wm.Object(name, {
     root: el_root,
     element: null,
-    control
+    control, name
 });
 
 const init_barebones = (ctx) => ctx.control.init(ctx);
@@ -57,7 +56,7 @@ const global_focus = {
     in_flight: []
 };
 
-const focus_window = (ctx) => {
+export const focus_window = (ctx) => {
     console.debug("[FocusHandler] Window focused.", ctx.control);
     ctx.element.style["z-index"] = global_focus.z;
     global_focus.in_flight.push(ctx.element);
@@ -75,6 +74,7 @@ export const run = (ctx) => {
     if(ctx.element) return;
     init_barebones(ctx);
     init_children(ctx);
+    return ctx;
 };
 
 export const centered = (size, parent_size) => (parent_size - size) / 2;
@@ -101,38 +101,32 @@ const register_hook = (name, cb=_=>{ throw new Error("[idiot-detector] unconfigu
 };
 
 let first_run = true;
-
-const ctx = create_program("Root", document.body, (x, y, w, h) => {
+export const create_root = (addl_programs, postinit=sys=>sys) => (x, y, w, h) => {
     const program_list = {
-        wm_hello: () => create_window(first_run ? "Welcome to John's iMac" : "John's iMac - About", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
-            add_control(wm.Frame("HelloFrame", "./about.html", 314, 214, 0.75), ctx.control);
+        wm_hello: () => create_window(first_run ? "Welcome to winwm." : "winwm — About", 14, 148, 320, 240, true, (ctx) => {
+            add_control(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 0.75), ctx.control);
         }),
-        wm_does: () => create_window("wmdoes.jpg", centered(320, w), centered(240, h), 320, 240, true, (ctx) => {
+        wm_does: () => create_window("wmdoes.jpg", 0, 0, 320, 240, true, (ctx) => {
             add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 1, true), ctx.control);
         }),
-        wm_term: () => create_window("termemu", centered(640, w), centered(480, h), 640, 480, true, (ctx) => {
-            add_control(termemu(), ctx.control);
-        }),
-        wm_ctl: () => create_window("Control Panel", 800 - 192, 72, 160, 48, false, (ctx) => {
+        wm_ctl: () => create_window("Control Panel", 144, 222, 160, 48, true, (ctx) => {
             add_control(wm.ControlPanel(document.body), ctx.control);
         }),
-        wm_burg: () => create_window("'burgh.exe (recursive)", centered(801, w), centered(184, h), 800, 185, true, (ctx) => {
+        wm_burg: () => create_window("'burgh.exe (recursive)", 0, 0, w, 185, true, (ctx) => {
             add_control(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
         }),
-        Browser: () => create_window("Browser", centered(abs.x, w), centered(abs.y, h), abs.x, abs.y, true, (ctx) => {
-            add_control(wm.Browser("http://ehpt.org/vending"), ctx.control);
-        }),
+        ...addl_programs
     };
 
     const programs = {};
-    const open_programs = new Set();
+    const open_programs = new Map();
     
-    const wm_root = create_window("John's iMac - Desktop", x, y, w, h, false);
+    const wm_root = create_window("winwm — Available Programs", x, y, 350, 136, false);
     const wm_desktop = wm.Control("Desktop", Control, {
         children: [],
         init: (ctx) => {
             const root = document.createElement("section");
-            root.className = "wm desktop";
+            root.className = "wm desktop row";
             const desktop_programs = Object.keys(program_list).map(name => {
                 programs[name] = () => create_program(name, root, () => {
                     const window = program_list[name]();
@@ -144,17 +138,18 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
                 container.className = "wm simple desktop-icon";
                 const icon = document.createElement("img");
                 icon.className = "wm shadow ico";
-                icon.src = "./folder.png";
+                icon.src = "/folder.png";
                 const label = document.createElement("a");
                 label.className = "wm shadow";
                 label.innerText = name;
 
                 container.addEventListener("click", () => {
-                    if (open_programs.has(name)) return;
-                    const prog = programs[name]();
-                    run(prog);
+                    let  prog;
+                    if  (prog = open_programs.get(name)) return focus_window(prog);
+                    else prog = programs[name]();
+                    run (prog);
                     focus_window(prog);
-                    open_programs.add(name);
+                    open_programs.set(name, prog);
                 });
 
                 container.append(icon, label);
@@ -163,25 +158,27 @@ const ctx = create_program("Root", document.body, (x, y, w, h) => {
             root.append(...desktop_programs);
             ctx.element = root;
             ctx.root.append(root);
-            run(programs.wm_hello());
-            run(programs.wm_ctl());
-            open_programs.add("wm_hello");
-            open_programs.add("wm_ctl");
+            open_programs.set("wm_hello", run(programs.wm_hello()));
+            open_programs.set("wm_ctl", run(programs.wm_ctl()));
             wm.spool_animations();
+            const info = { wm_root, wm_desktop, programs, open_programs };
+            window.wm = info;
+            console.warn("[winwm] system initialized. runtime info:", info)
+            postinit(info);
         }
     });
 
     register_hook("mousedown", focus_window);
-
     add_control(cmb(), wm_root);
     add_control(wm_desktop, wm_root);
-
     return wm_root;
-});
-window.wm = ctx;
+};
 
-if (window.location.pathname.length <= 1) {
-    run(ctx);
-    focus_window(ctx);
-    first_run = false;
-}
+export const managed_run = (root_ctx) => {
+    return (with_context) => {
+        const ctx = with_context ? with_context : root_ctx;
+        run(ctx);
+        focus_window(ctx);
+        first_run = false;
+    };
+};

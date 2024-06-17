@@ -33,8 +33,9 @@ export const manage_csv = (data, schema) => {
     return {
         resolve: () => {
             const rows = [];
-            for (let i = 0; i < data.length; i++)
+            for (let i = 0; i < data.length; i++) {
                 rows[i] = get_row(schema, data, i);
+            }
             return rows;
         }
     };;

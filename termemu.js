@@ -9,22 +9,23 @@ const catadd = str => { if (catc.has(strmap.get(str))) return; strmap.set(str, $
 const catrem = str => { const v = strmap.get(str); catc.delete(v); strmap.delete(str) };
 const catdel = idx => { return catc.delete(idx) };
 const catcal = (id, ...xargs) => { const f = catc.get(id); return f(...xargs) }
-const cached = str => { const id = catadd(str); setTimeout(() => catdel(id), 0); return catcal(id) }
+const acache = str => { const id = catadd(str); setTimeout(() => catdel(id), 0); return catcal(id) }
+
+const l = 80;
+export const lilJit = f => (...x) => {
+    try { return f(...x); } catch (e) {
+    const namelength = e.name.length;
+    const msglength  = namelength + e.message.length;
+    const length_returnable = Math.min(msglength, l-3);
+    let msg = nothing;
+    if (length_returnable < msglength) msg = `Error<${e.name} — ${e.message.substr(0, (l-6) - namelength)}>...`;
+    else msg = `Error<${e.name} — ${e.message}`;
+    if(el.ref && el.ref.innerHTML) el.ref.innerHTML += "<b color='c e'>runtime error: eval failure</b>";
+    console.warn("[WARN] downgraded(captured) Error<" + e.name + ">");
+    el.log.push(msg);
+}}; const evl = lilJit(acache);
 
 export const el = { ref: null, log: [] }, nothing = "", is_empty = x => x.length === nothing.length;
-const runtime = (f, l=80) => {
-    return (...x) => { try { return f(...x); } catch (e) {
-        const namelength = e.name.length;
-        const msglength  = namelength + e.message.length;
-        const length_returnable = Math.min(msglength, l-3);
-        let msg = nothing;
-        if (length_returnable < msglength) msg = `Error<${e.name} — ${e.message.substr(0, (l-6) - namelength)}>...`;
-        else msg = `Error<${e.name} — ${e.message}`;
-        if(el.ref && el.ref.innerHTML) el.ref.innerHTML += "<b color='c e'>runtime error: eval failure</b>";
-        console.warn("[WARN] downgraded(captured) Error<" + e.name + ">");
-        el.log.push(msg);
-    };
-}}, evl = runtime(cached);
 
 export const create_term = () => wm.Control("termemu", {
     children: [],
