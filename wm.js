@@ -1,4 +1,4 @@
-import { wm, add_control, add_hook, Control } from "./controls.js";
+import { wm, add_control, add_hook, Control, wmid_wsprefix } from "./controls.js";
 import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=ctx=>{}) => wm.Control(name, Control, {
@@ -106,7 +106,7 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
     const open_programs = new Map();
 
     const read_program_state = () => {
-        const state = localStorage.getItem("wm::ws");
+        const state = localStorage.getItem(wmid_wsprefix());
         if  (!state) return [];
         const read = state.split(",");
         read.pop();
@@ -150,7 +150,8 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
             root.append(...desktop_programs);
             ctx.element = root;
             ctx.root.append(root);
-            open_programs.set("wm_hello", run(programs.wm_hello()));
+
+            if (!window.welcomed) open_programs.set("wm_hello", run(programs.wm_hello()));
             open_programs.set("wm_ctl", run(programs.wm_ctl()));
 
             const to_open = read_program_state();
@@ -176,7 +177,7 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
         console.log("saving program state");
         let x = "";
         open_programs.forEach((_, v) => x += v + ",");
-        localStorage.setItem("wm::ws", x);
+        localStorage.setItem(wmid_wsprefix(), x);
     };
 
     window.wmid = { psint: setInterval(save_program_state, 60000) };
@@ -185,13 +186,20 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
     return wm_root;
 };
 
+const check_welcomeness = () => {
+    if (localStorage.getItem("welcomed") === "yea") window.welcomed = true;
+    else window.welcomed = false;
+};
+
 export const create_managed = (name, root_el, width, height,  program_factory, title, postinit=sys=>sys) => {
     const program = create_program(name, root_el, create_root(program_factory, title, postinit), width, height);
-    window.welcomed = false;
+    window.wmid.ref = name;
+    check_welcomeness();
     return (swap_ctx=void 0) => {
         const ctx = swap_ctx ? swap_ctx : program;
         run(ctx);
         focus_window(ctx);
         window.welcomed = true;
+        localStorage.setItem("welcomed", "yea");
     };
 };

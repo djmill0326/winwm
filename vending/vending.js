@@ -187,7 +187,7 @@ const dirty = () => {
     }
 };
 
-const program_list = () => ({
+const program_list = (_, __, w) => ({
     wm_hello: () => create_window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 148, 320, 240, true, (ctx) => {
         add_control(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 0.75), ctx.control);
     }),

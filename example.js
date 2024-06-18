@@ -24,4 +24,4 @@ const program_list = (x, y, w, h) => ({
     }),
 });
 
-create_managed("winwm-example", document.body, 800, 600, program_list)();
+create_managed("winwm", document.body, 800, 600, program_list)();

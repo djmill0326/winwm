@@ -1,5 +1,9 @@
 import { abs } from "./util/offsets.js";
 
+export const wmid_getref = () => window.wmid && window.wmid.ref ? window.wmid.ref : "unk";
+export const wmid_getprefix = (is_state=false) => is_state ? `ws::${wmid_getref()}::` : `wm::${wmid_getref()}::`;
+export const wmid_wsprefix = () => wmid_getprefix() + "ws";
+
 const create_object = (name, proto) => {
     proto.name = Object.seal(name);
     return proto;
@@ -98,7 +102,7 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             ctx.root.attributeStyleMap.set("transform", transform);
         }
 
-        const save = localStorage.getItem("ws::" + window.name);
+        const save = localStorage.getItem(wmid_getprefix(true) + window.name);
         if (save) {
             const pos = save.split(",").map(parseFloat);
             [move.xx, move.xy, move.x, move.y] = pos;
@@ -118,7 +122,7 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             rect = root.getBoundingClientRect();
             moving = false;
             pend = false; // window movement serializer, who even cares. what, am I supposed to save a whole IntArray for this?
-            localStorage.setItem("ws::" + window.name, Math.round(move.xx) + "," + Math.round(move.xy) + "," + move.x + "," + move.y);
+            localStorage.setItem(wmid_getprefix(true) + window.name, Math.round(move.xx) + "," + Math.round(move.xy) + "," + move.x + "," + move.y);
         });
 
         ctx.element = root;
