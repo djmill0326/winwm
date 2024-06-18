@@ -1,5 +1,5 @@
 const http = require("http");
-const fs = require("fs");
+const fs   = require("fs");
 
 const static = (url, cb, fallback="/about.html", onerror=()=>console.log("failed to file.")) => {
     fs.readFile("." + url, 'binary', function(err, data) {

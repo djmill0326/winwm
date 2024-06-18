@@ -1,6 +1,6 @@
-import { create_program, create_window, create_root, managed_run } from "../vending_compat.js";
-import { add_hook } from "../controls.js";
+import wm, { add_control, add_hook } from "../controls.js";
 import mk, { mk_context, mk_append } from "../util/ui.js";
+import { create_window, create_managed, run } from "../wm.js";
 import { read_managed, get_row } from "./csv.js";
 import schema from "./schema.js";
 const program = mk("vending");
@@ -187,7 +187,21 @@ const dirty = () => {
     }
 };
 
-const init = create_root({ edit: editor_window }, sys => sys.programs.edit);
-const ctx = create_program("vending-compat", document.body, init, 350, 420);
-const run = managed_run(ctx); run();
-const el = document.querySelector(".wm.desktop.row").attributeStyleMap.set("flex-direction", "row");
+const program_list = () => ({
+    wm_hello: () => create_window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 148, 320, 240, true, (ctx) => {
+        add_control(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 0.75), ctx.control);
+    }),
+    wm_does: () => create_window("wmdoes.jpg", 0, 0, 320, 240, true, (ctx) => {
+        add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 1, true), ctx.control);
+    }),
+    wm_ctl: () => create_window("Control Panel", 144, 222, 160, 72, true, (ctx) => {
+        add_control(wm.ControlPanel(document.body), ctx.control);
+    }),
+    wm_burg: () => create_window("'burgh.exe (recursive)", 0, 0, w, 271, true, (ctx) => {
+        add_control(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
+    }),
+    edit: editor_window
+});
+
+create_managed("winwm-VendingCompat", document.body, 350, 420, program_list)();
+document.querySelector(".wm.desktop.row").attributeStyleMap.set("flex-direction", "row");

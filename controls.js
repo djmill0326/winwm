@@ -18,11 +18,23 @@ export const create_button = (name, onclick, onmousedown) => create_control("But
         const root = document.createElement("button");
         root.innerText = name;
         root.className = "wm button";
-        root.onclick = onclick;
+        root.onclick = onclick.bind(ctx);
         root.onmousedown = onmousedown;
-        
         ctx.element = root;
         ctx.root.append(root);
+    }
+});
+
+export const create_confirmable = (name, oncomplete) => create_button(name, function (ev) {
+    if (this.control.confirmed) {
+        this.control.confirmed = false;
+        this.element.innerText = this.element.placeholder;
+        console.log(oncomplete, ev);
+        return oncomplete(ev);
+    }   this.control.confirmed = confirm("Are you sure? Click 'Cancel' to undo. Press 'Ok' to confirm click.");
+    if (this.control.confirmed) {
+        this.element.placeholder = this.element.innerText;
+        this.element.innerText = "Click to confirm.";
     }
 });
 
@@ -81,24 +93,32 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             moving = true;
         });
 
+        const update_transform = (x, y) => {
+            const transform = new CSSTransformValue([ new CSSTranslate(CSS.px(x), CSS.px(y)) ])
+            ctx.root.attributeStyleMap.set("transform", transform);
+        }
+
+        const save = localStorage.getItem("ws::" + window.name);
+        if (save) {
+            const pos = save.split(",").map(parseFloat);
+            [move.xx, move.xy, move.x, move.y] = pos;
+            update_transform(Math.round(move.xx), Math.round(move.xy));
+        }
+
         document.addEventListener("mousemove", debounce(event => {
             if (!moving || pend) return;
-
             const [x, y] = [move.xx, move.xy] = [
                 event.clientX - rect.x - move.x,
                 event.clientY - rect.y - move.y
-            ];
-
-            const translate = new CSSTransformValue([ new CSSTranslate(CSS.px(x), CSS.px(y)) ]);
-
-            ctx.root.attributeStyleMap.set("transform", translate);
+            ];  update_transform(x, y);
         }));
 
         document.addEventListener("click", event => {
             [move.x, move.y] = [event.offsetX, event.offsetY];
             rect = root.getBoundingClientRect();
             moving = false;
-            pend = false;
+            pend = false; // window movement serializer, who even cares. what, am I supposed to save a whole IntArray for this?
+            localStorage.setItem("ws::" + window.name, Math.round(move.xx) + "," + Math.round(move.xy) + "," + move.x + "," + move.y);
         });
 
         ctx.element = root;
@@ -126,7 +146,7 @@ export const create_clock = (onupdate=(_text="")=>null) => create_control("Clock
         const str_hr = pad_two(hr % 24);
         const str_hr_loc = str_hr >= 12 ? "PM" : "AM";
         ctx.element.innerText = `${str_hr%12}:${str_min}:${str_sec} ${str_hr_loc}`;
-        onupdate(ctx.element.innerText)
+        onupdate(ctx.element.innerText);
     },
     init: (ctx) => {
         const root = document.createElement("span");
@@ -135,7 +155,7 @@ export const create_clock = (onupdate=(_text="")=>null) => create_control("Clock
         ctx.element = root;
         ctx.root.append(root);
         ctx.control.update(ctx);
-        setInterval(() => ctx.control.update(ctx), 999.5 + Math.random());
+        return setInterval(() => ctx.control.update(ctx), 999.5 + Math.random());
     }
 });
 
@@ -242,6 +262,14 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
         root.className = "wm control panel";
         
         add_control(create_button("Switch Theme", determine_theme), ctx.control);
+        add_control(create_confirmable("Clear localStorage", () => {
+            alert("localStorage cleared. reloading...");
+            clearInterval(window.wmid.psint);
+            window.wm.open_programs.clear();
+            setTimeout(() => {
+            localStorage.clear();
+            location.reload();
+        },  100) }), ctx.control);
 
         ctx.element = root;
         ctx.root.append(root);

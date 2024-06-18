@@ -1,8 +1,7 @@
-const server = require("./server_simple.js");
+const server     = require("./server_simple.js");
 const { Server } = require("socket.io");
-const process = require("process");
-const readline = require("readline");
-const { isUndefined } = require("util");
+const process    = require("process");
+const readline   = require("readline");
 
 const parse_request = (_, data) => {
     const args = data.split(":");
