@@ -112,7 +112,7 @@ export const create_root = (addl_programs, postinit=sys=>sys) => (x, y, w, h) =>
         wm_ctl: () => create_window("Control Panel", 144, 222, 160, 48, true, (ctx) => {
             add_control(wm.ControlPanel(document.body), ctx.control);
         }),
-        wm_burg: () => create_window("'burgh.exe (recursive)", 0, 0, w, 185, true, (ctx) => {
+        wm_burg: () => create_window("'burgh.exe (recursive)", 0, 0, w, 271, true, (ctx) => {
             add_control(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
         }),
         ...addl_programs

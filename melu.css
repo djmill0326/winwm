@@ -67,7 +67,7 @@ body {
     display: flex;
     flex-direction: column;
     user-select: none;
-    transition: all 101ms ease-out;
+    transition: all 111ms ease-in-out;
 }
 
 .wm .shadow {
@@ -94,7 +94,7 @@ body {
 
 .old .wm.button {
     border: 3px outset var(--background-mute);
-    padding: 1px 2px;
+    padding: 0px 2px;
 }
 
 .wm.button:hover, .wm.menubar:hover {

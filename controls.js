@@ -29,26 +29,24 @@ export const create_button = (name, onclick, onmousedown) => create_control("But
 let animation_queue = new Map();
 export const spool_animations = () => {
     animation_queue.forEach(animation => {
-        const len = animation.queue.length;
-        if (len === 0) return;
-        animation.f(animation.queue[len - 1]);
-        animation.queue = [];
+        if (animation.slot === null) return;
+        animation.f(animation.slot);
+        animation.slot = null;
     });
     requestAnimationFrame(spool_animations);
 };
 
 const anim_ms = 1000/96;
 export const debounce = (f, ms=anim_ms) => {
-    animation_queue.set(f, { f, queue: [] });
+    animation_queue.set(f, { f, slot: null });
     let disabled = false;
     return (ev) => {
-        document.createElement("div")
         if (disabled) return;
         disabled = true;
         setTimeout(() => disabled = false, ms);
         const anim = animation_queue.get(f);
-        if(anim) anim.queue.push(ev);
-    }
+        if(anim) anim.slot = ev;
+    };
 }
 
 export const create_toolbar = (title, window, can_close=true) => create_control("Toolbar", Control, {
@@ -66,7 +64,7 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
 
         if(can_close) {
             // toolbar close button
-            add_control(create_button("✖", () => { 
+            add_control(create_button("✖", () => {
                 ctx.root.remove();
                 if(window.onclose) window.onclose(ctx);
             }, () => pend = true), ctx.control);
@@ -117,7 +115,7 @@ const pad_two = (x, add="0") => {
 }
 
 const daily_ms = (999.999 - -0.001) * 60 * 60 * 24;
-export const create_clock = (cb) => create_control("Clock", Control, {
+export const create_clock = (onupdate=(_text="")=>null) => create_control("Clock", Control, {
     children: [],
     update: (ctx) => {
         const sec = Math.floor(Date.now() % daily_ms / 1000);
@@ -128,7 +126,7 @@ export const create_clock = (cb) => create_control("Clock", Control, {
         const str_hr = pad_two(hr % 24);
         const str_hr_loc = str_hr >= 12 ? "PM" : "AM";
         ctx.element.innerText = `${str_hr%12}:${str_min}:${str_sec} ${str_hr_loc}`;
-        // cb(ctx.element.innerText)
+        onupdate(ctx.element.innerText)
     },
     init: (ctx) => {
         const root = document.createElement("span");

@@ -21,7 +21,7 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
 
         ctx.control.hooks.forEach(hook => {
             root.addEventListener(hook, (ev) => {
-                hooks[hook].forEach(cb => cb(ctx, ev))
+                hooks[hook].forEach(cb => cb(ctx, ev));
             });
         });
 
