@@ -226,7 +226,7 @@ const create_browser = (src="http://ehpt.org/", interactive=0.1) => create_contr
 const change_ico = (cls, to="favicon") => {
     const icons = document.getElementsByClassName(cls);
     const src = to + ".ico";
-    for (let i = 0; i < icons.length; i++) setTimeout(() => icons[i].src = src, i * 24);
+    for (let i = 0; i < icons.length; i++) icons[i].src = src, i * 24;
 }
 
 const create_control_panel = (root_el, just_init=false) => create_control("control.exe", {
