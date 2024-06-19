@@ -26,8 +26,8 @@ if (sockets) {
 
     io.on('connection', (socket) => {
         ++i;
-        console.warn("[socket.io] user connected");
-        prompt = "termemu-socket-connection % ";
+        console.log("* user connected");
+        prompt = "termemu ~ ";
 
         socket.on("request_link", () => {
             let enabled = [false, false];
@@ -40,12 +40,12 @@ if (sockets) {
                 if (data.stdout && !enabled[1]) {
                     enabled[1] = true;
                     socket.emit("out", "[termemu-direct] socket-connection:out/stdout (broadcast)\n");
-                    console.info(`[socket.io] hooked for broadcast <${socket.id}>`);
+                    console.log(`* user hooked 'out'`);
                 }
                 if (data.stdin && !enabled[0]) {
                     enabled[0] = true;
                     socket.emit("out", "[termemu-direct] socket-connection:in/stdin (direct)\n");
-                    console.error(`[socket.io] hooked for direct connection <${socket.id}>`);
+                    console.log(`* user hooked 'in'`);
                     take_input(socket);
                 }
             });
@@ -62,7 +62,7 @@ if (sockets) {
 
         socket.on('disconnect', () => {
             connections.delete(socket);
-            console.error(`[socket.io] user disconnected: ${socket.id}`);
+            console.log(`* user disconnected`);
         });
     });
 }

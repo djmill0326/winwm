@@ -1,40 +1,48 @@
-const { open } = require("fs/promises");
+const { readFile } = require("fs/promises");
+const { gzip } = require("zlib");
 const http = require("http");
-const { createGzip, constants } = require("zlib");
 
-const memcache = {
-    recall: new Map(),
-    blob: new Uint8Array()
-};
+const memcache = new Map();
 
-const COMPRESS = true;
-const static = async (url, res, fallback="/about.html", onerror=()=>console.log("failed to file.")) => {
+const cd = '\u001b[3';
+const cl = '\u001b[9';
+const cr = '\u001b[39m';
+
+const static = async (url, res, fallback="about.html", onerror=()=>console.log("failed to file.")) => {
     try {
-        const stream = (await open(url)).createReadStream("." + url, );
-        if (COMPRESS) stream.pipe(createGzip({ level: 1 })).pipe(res);
-        else stream.pipe(res);
+        let cached = memcache.get(url);
+        if (cached) {
+            res.write(cached);
+            res.end();
+        } else {
+            gzip(await readFile("./" + url), (err, data) => {
+                console.log(`${cl}0mgot${cr} \t${cd}6m${url}${cr}`);
+                if (err) throw err;
+                memcache.set(url, data);
+                res.write(data);
+                res.end();
+            });
+        }
     } catch (error) {
-        console.warn(error);
-        static(fallback, res, "/50x.html");
+        console.log(`${cl}1mfag${cl}0mgot\t${cl}1m[${cl}0mdetected${cl}1m] ${cd}3m404 ${cl}0m${error.message}${cr}`);
+        static(fallback, res, "50x.html");
     }
 };
 
 module.exports = http.createServer((request, response) => {
-    let ext_override = null;
-    const url = request.url;
-    let out = request.url;
-    const path = out.split("/");
+    let   href = request.url;
+    const path = href.split("/");
     const file = path[path.length - 1].split(".");
     if (path.length) {
         // root directory override
         switch(file[0]) {
             case "":
             case "/":
-                out = "index.html";
+                href = "index.html";
                 break;
             default:
                 if(file.length === 1)
-                    out = request.url + "/index.html";
+                    href = request.url + "/index.html";
         }
     }
     let mime = "text/html";
@@ -55,8 +63,7 @@ module.exports = http.createServer((request, response) => {
                 mime = "image/png";
         }
     }
-    console.log(out);
     response.setHeader("Content-Type", mime);
-    if (COMPRESS) response.setHeader("Content-Encoding", "gzip");
-    static("./" + out, response);
+    response.setHeader("Content-Encoding", "gzip");
+    static(href, response);
 });
