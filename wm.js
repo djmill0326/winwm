@@ -1,5 +1,6 @@
 import { wm, add_control, add_hook, Control, wmid_wsprefix } from "./controls.js";
 import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
+import { DefaultProgramOptions } from "./util/offsets.js";
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=ctx=>{}) => wm.Control(name, Control, {
     children: [],
@@ -26,13 +27,7 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
 
         cb(ctx);
         ctx.root.append(root);
-    },
-    asm: (ctx) => ({
-        x: ctx.element.attributeStyleMap.get("left"), 
-        y: ctx.element.attributeStyleMap.get("top"), 
-        width: ctx.element.attributeStyleMap.get("width"), 
-        height: ctx.element.attributeStyleMap.get("height")
-    })
+    }
 });
 
 export const create_ctx = (name, control, el_root) => wm.Object(name, {
@@ -100,7 +95,7 @@ const register_hook = (name, cb=_=>{ throw new Error("[idiot-detector] unconfigu
     hooks[name].push(cb);
 };
 
-export const create_root = (program_list_factory, title="John's iMac - Desktop", postinit=sys=>sys) => (x, y, w, h) => {
+export const create_root = (program_list_factory, title="John's iMac - Desktop", postinit=sys=>sys, opt=DefaultProgramOptions) => (x, y, w, h) => {
     const program_list = program_list_factory(x, y, w, h);
     const programs = {};
     const open_programs = new Map();
@@ -151,8 +146,8 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
             ctx.element = root;
             ctx.root.append(root);
 
-            if (!window.welcomed) open_programs.set("wm_hello", run(programs.wm_hello()));
-            open_programs.set("wm_ctl", run(programs.wm_ctl()));
+            if (!window.welcomed || opt.alwaysWelcome) open_programs.set("wm_hello", run(programs.wm_hello()));
+            if (!opt.optionalCtl) open_programs.set("wm_ctl", run(programs.wm_ctl()));
 
             const to_open = read_program_state();
             to_open.forEach(name => {
@@ -174,10 +169,10 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
 
     const save_program_state = (e) => {
         if(window.wmid && e) clearInterval(window.wmid.psint);
-        console.log("saving program state");
         let x = "";
         open_programs.forEach((_, v) => x += v + ",");
         localStorage.setItem(wmid_wsprefix(), x);
+        console.debug("[QuickSave] saved.");
     };
 
     window.wmid = { psint: setInterval(save_program_state, 60000) };

@@ -20,7 +20,7 @@ const program_list = (x, y, w, h) => ({
         add_control(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
     }),
     Browser: () => create_window("Browser", centered(abs.x, w), centered(abs.y, h), abs.x, abs.y, true, (ctx) => {
-        add_control(wm.Browser("http://ehpt.org/vending"), ctx.control);
+        add_control(wm.Browser("http://ehpt.org/"), ctx.control);
     }),
 });
 

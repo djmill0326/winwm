@@ -9,3 +9,5 @@ export const browserSizeY = 600 * defaultWindowScaling // this is the nicest sim
 export const browserSizeX = browserSizeY * (isStandard ? browserRatio : alternateRatio);
 
 export const abs = { x: browserSizeX, y: browserSizeY, x_no_border: browserSizeX - negativeScreenX, y_no_border: browserSizeY - negativeScreenY }
+
+export const DefaultProgramOptions = { alwaysWelcome: false, optionalCtl: false };

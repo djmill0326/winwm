@@ -42,9 +42,9 @@ export const create_confirmable = (name, oncomplete) => create_button(name, func
     }
 });
 
-let animation_queue = new Map();
+const animations = { list: [], idx: 0 };
 export const spool_animations = () => {
-    animation_queue.forEach(animation => {
+    animations.list.forEach(animation => {
         if (animation.slot === null) return;
         animation.f(animation.slot);
         animation.slot = null;
@@ -52,38 +52,38 @@ export const spool_animations = () => {
     requestAnimationFrame(spool_animations);
 };
 
-const anim_ms = 1000/96;
-export const debounce = (f, ms=anim_ms) => {
-    animation_queue.set(f, { f, slot: null });
-    let disabled = false;
+export const debounce = (f) => {
+    const idx = ++animations.idx;
+    animations.list[idx] = { f, slot: null };
     return (ev) => {
-        if (disabled) return;
-        disabled = true;
-        setTimeout(() => disabled = false, ms);
-        const anim = animation_queue.get(f);
+        const anim = animations.list[idx];
         if(anim) anim.slot = ev;
     };
 }
+
+export const r = Math.ceil;
 
 export const create_toolbar = (title, window, can_close=true) => create_control("Toolbar", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("span");
         root.className = "wm toolbar";
+
         const name = document.createElement("span");
         name.className = "wm title";
         name.innerText = title;
         root.append(name);
         ctx.element = root;
+        ctx.root.append(root);
 
-        let pend = false; // should the window be prevented from moving?
+        let prevent = false; // movement parking brake
 
         if(can_close) {
             // toolbar close button
             add_control(create_button("✖", () => {
                 ctx.root.remove();
                 if(window.onclose) window.onclose(ctx);
-            }, () => pend = true), ctx.control);
+            }, () => prevent = true), ctx.control);
         }
 
         // new window movement handling
@@ -98,7 +98,7 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
         });
 
         const update_transform = (x, y) => {
-            const transform = new CSSTransformValue([ new CSSTranslate(CSS.px(x), CSS.px(y)) ])
+            const transform = new CSSTransformValue([ new CSSTranslate(CSS.px(r(x)), CSS.px(r(y))) ])
             ctx.root.attributeStyleMap.set("transform", transform);
         }
 
@@ -106,11 +106,11 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
         if (save) {
             const pos = save.split(",").map(parseFloat);
             [move.xx, move.xy, move.x, move.y] = pos;
-            update_transform(Math.round(move.xx), Math.round(move.xy));
+            update_transform(move.xx, move.xy);
         }
 
         document.addEventListener("mousemove", debounce(event => {
-            if (!moving || pend) return;
+            if (!moving || prevent) return;
             const [x, y] = [move.xx, move.xy] = [
                 event.clientX - rect.x - move.x,
                 event.clientY - rect.y - move.y
@@ -121,12 +121,9 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             [move.x, move.y] = [event.offsetX, event.offsetY];
             rect = root.getBoundingClientRect();
             moving = false;
-            pend = false; // window movement serializer, who even cares. what, am I supposed to save a whole IntArray for this?
+            prevent = false; // window movement serializer, who even cares. what, am I supposed to save a whole IntArray for this?
             localStorage.setItem(wmid_getprefix(true) + window.name, Math.round(move.xx) + "," + Math.round(move.xy) + "," + move.x + "," + move.y);
         });
-
-        ctx.element = root;
-        ctx.root.append(root);
     },
     update_title: (ctx, name) => {
         ctx.root.children[0].innerText = name;
@@ -234,8 +231,19 @@ const change_ico = (cls, to="folder.png") => {
 const create_control_panel = (root_el, just_init=false) => create_control("control.exe", {
     children: [],
     init: (ctx) => {
+        const root = document.createElement("div");
+        root.className = "wm control panel";
+
         const theme = window.localStorage.getItem("wm");
         window.current_theme = parseInt(theme ? theme : 0);
+
+        const css_height = ctx.root.attributeStyleMap.get("height");
+        const fixme = (old=true) => {
+            if (old) ctx.root.attributeStyleMap.set("height", css_height);
+                else ctx.root.attributeStyleMap.set("height", css_height.add(CSS.px(2)));
+            if (old) change_ico("ico");
+                else change_ico("ico", "windows.png");
+        };
 
         const determine_theme = (_, inc=true) => {
             window.current_theme += inc;
@@ -250,8 +258,7 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
                     window.current_theme = 0;
             }
             if(window.current_theme) root_el.classList.toggle("old");
-            if(root_el.classList.contains("old")) change_ico("ico")
-            else change_ico("ico", "windows.png")
+            fixme(root_el.classList.contains("old"));
             window.localStorage.setItem("wm", window.current_theme);
             document.querySelectorAll("iframe").forEach(frame => {
                 frame.contentWindow.postMessage("theme:=" + window.current_theme);
@@ -261,9 +268,6 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
         determine_theme(0, false);
         window.determine_theme = determine_theme;
         if(just_init) return;
-
-        const root = document.createElement("div");
-        root.className = "wm control panel";
         
         add_control(create_button("Switch Theme", determine_theme), ctx.control);
         add_control(create_confirmable("Clear localStorage", () => {

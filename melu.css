@@ -128,7 +128,7 @@ body {
     flex-direction: column;
     font-size: 16px;
     background: var(--background);
-    transition: all calc(1s/96) linear;
+    transition: transform calc(1s/96) linear;
     color: var(--color);
     padding: 0;
     border: 1px solid var(--color-mute);
