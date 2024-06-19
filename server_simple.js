@@ -1,31 +1,39 @@
-const { readFile } = require("fs/promises");
-const { gzip } = require("zlib");
+const fsp   = require("fs/promises");
+const fs   = require("fs");
+const zlib = require("zlib");
 const http = require("http");
-
-const memcache = new Map();
 
 const cd = '\u001b[3';
 const cl = '\u001b[9';
 const cr = '\u001b[39m';
 
-const static = async (url, res, fallback="about.html", onerror=()=>console.log("failed to file.")) => {
+const memcache = new Map();
+fs.watch("./").on("change", (_, file) => {
+    if (memcache.delete("/" + file)) console.log(
+        `${cd}3m(hotcache)${cl}0m removed cached file ${cd}6m/${file}${cl}0m from memory${cr}`
+    );
+});
+
+const static = async (url, res, fallback="/about.html", onerror=()=>console.log("failed to file.")) => {
+    const origin = res.req.socket.remoteAddress;
     try {
         let cached = memcache.get(url);
         if (cached) {
             res.write(cached);
+            console.log(`${cl}0m[${cd}3m${origin}${cl}0m] got ${cd}6m${url} ${cd}3m(cached)${cr}`);
             res.end();
         } else {
-            gzip(await readFile("./" + url), (err, data) => {
-                console.log(`${cl}0mgot${cr} \t${cd}6m${url}${cr}`);
+            zlib.gzip(await fsp.readFile("." + url), (err, data) => {
                 if (err) throw err;
                 memcache.set(url, data);
                 res.write(data);
+                console.log(`${cl}0m[${cd}3m${origin}${cl}0m] got${cr} ${cd}6m${url}${cr}`);
                 res.end();
             });
         }
     } catch (error) {
-        console.log(`${cl}1mfag${cl}0mgot\t${cl}1m[${cl}0mdetected${cl}1m] ${cd}3m404 ${cl}0m${error.message}${cr}`);
-        static(fallback, res, "50x.html");
+        console.log(`${cl}0m[${cl}1m${origin}${cl}0m]${cd}1m 404 ${cd}3mCan't Send ${cl}0m${url}${cr}`);
+        static(fallback, res, "/index.html");
     }
 };
 
@@ -38,7 +46,7 @@ module.exports = http.createServer((request, response) => {
         switch(file[0]) {
             case "":
             case "/":
-                href = "index.html";
+                href = "/index.html";
                 break;
             default:
                 if(file.length === 1)

@@ -128,15 +128,15 @@ body {
     flex-direction: column;
     font-size: 16px;
     background: var(--background);
-    transition: transform calc(1s/7) cubic-bezier(0.175, 0.885, 0.32, 1.275);
     color: var(--color);
     padding: 0;
     border: 1px solid var(--color-mute);
-    opacity: 0.9;
+    opacity: 0.92;
+    transition: transform calc(1s/120) linear;
 }
 
 .wm.window.focus {
-    opacity: 0.95;
+    opacity: 0.96;
     filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
 }
 
