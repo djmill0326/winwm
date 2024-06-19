@@ -1,7 +1,7 @@
 {
   "name": "winwm",
   "version": "0.0.1",
-  "description": "",
+  "description": "windowing for the web. modular window manager for html/css/js",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
