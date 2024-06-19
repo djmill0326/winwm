@@ -223,9 +223,10 @@ const create_browser = (src="http://ehpt.org/", interactive=0.1) => create_contr
     }
 });
 
-const change_ico = (cls, to="folder.png") => {
+const change_ico = (cls, to="favicon") => {
     const icons = document.getElementsByClassName(cls);
-    for (let i = 0; i < icons.length; i++) icons[i].src = to;
+    const src = to + ".ico";
+    for (let i = 0; i < icons.length; i++) setTimeout(() => icons[i].src = src, i * 24);
 }
 
 const create_control_panel = (root_el, just_init=false) => create_control("control.exe", {
@@ -242,7 +243,7 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
             if (old) ctx.root.attributeStyleMap.set("height", css_height);
                 else ctx.root.attributeStyleMap.set("height", css_height.add(CSS.px(2)));
             if (old) change_ico("ico");
-                else change_ico("ico", "windows.png");
+                else change_ico("ico", "folder");
         };
 
         const determine_theme = (_, inc=true) => {

@@ -125,7 +125,7 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
                 container.className = "wm simple desktop-icon";
                 const icon = document.createElement("img");
                 icon.className = "wm shadow ico";
-                icon.src = "/folder.png";
+                icon.src = "/favicon.ico";
                 const label = document.createElement("a");
                 label.className = "wm shadow";
                 label.innerText = name;

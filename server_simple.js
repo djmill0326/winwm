@@ -1,50 +1,45 @@
+const { open } = require("fs/promises");
 const http = require("http");
-const fs   = require("fs");
+const { createGzip, constants } = require("zlib");
 
-const static = (url, cb, fallback="/about.html", onerror=()=>console.log("failed to file.")) => {
-    fs.readFile("." + url, 'binary', function(err, data) {
-        if(err) {
-            onerror(err);
-            console.log(err);
-            static(fallback, cb, "/50x.html");
-            return;
-        }
-        cb(data);
-    });
-}
+const memcache = {
+    recall: new Map(),
+    blob: new Uint8Array()
+};
+
+const COMPRESS = true;
+const static = async (url, res, fallback="/about.html", onerror=()=>console.log("failed to file.")) => {
+    try {
+        const stream = (await open(url)).createReadStream("." + url, );
+        if (COMPRESS) stream.pipe(createGzip({ level: 1 })).pipe(res);
+        else stream.pipe(res);
+    } catch (error) {
+        console.warn(error);
+        static(fallback, res, "/50x.html");
+    }
+};
 
 module.exports = http.createServer((request, response) => {
     let ext_override = null;
-    let url = request.url;
-    const path = url.split("/");
+    const url = request.url;
+    let out = request.url;
+    const path = out.split("/");
     const file = path[path.length - 1].split(".");
     if (path.length) {
         // root directory override
         switch(file[0]) {
             case "":
             case "/":
-                url = "index.html";
+                out = "index.html";
                 break;
             default:
                 if(file.length === 1)
-                    url = request.url + "/index.html";
-        }
-    }
-    if (file.length >= 2) {
-        // file with extension
-        switch (file[0]) {
-            case "favicon":
-                url = "folder.png";
-                ext_override = "ico";
-                break;
-            case "index":
-                url = path.slice(0, path.length - 1) + "/index.html"
-                ext_override = "html";
+                    out = request.url + "/index.html";
         }
     }
     let mime = "text/html";
-    if (ext_override || file.length > 1) {
-        switch (ext_override ? ext_override : file[file.length - 1]) {
+    if (file.length > 1) {
+        switch (file[file.length - 1]) {
             case "txt":
                 mime = "text/plain";
                 break;
@@ -56,16 +51,12 @@ module.exports = http.createServer((request, response) => {
                 break;
             case "png":
             case "jpg":
-                mime = "image/png";
             case "ico":
-                break;
-                mime = "image/ico";
+                mime = "image/png";
         }
     }
-    console.log(url);
+    console.log(out);
     response.setHeader("Content-Type", mime);
-    static("/" + url, (data) => {
-        response.write(data, "binary");
-        response.end();
-    });
+    if (COMPRESS) response.setHeader("Content-Encoding", "gzip");
+    static("./" + out, response);
 });
