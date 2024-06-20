@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js"
   },
-  "author": "",
+  "author": "Dylan Miller <djmill0326@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
     "socket.io": "^4.7.4"
