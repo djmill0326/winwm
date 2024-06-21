@@ -20,8 +20,11 @@ export const create_button = (name, onclick, onmousedown) => create_control("But
     children: [],
     init: (ctx) => {
         const root = document.createElement("button");
-        root.innerText = name;
-        root.className = "wm button";
+        root.className = "wm button ";
+        if (typeof name === "object") {
+            root.innerText = name.display;
+            root.classList.add(...name.classes);
+        } else root.innerText = name;
         root.onclick = onclick.bind(ctx);
         root.onmousedown = onmousedown;
         ctx.element = root;
@@ -63,12 +66,21 @@ export const debounce = (f) => {
 
 export const r = Math.ceil;
 
-export const create_toolbar = (title, window, can_close=true) => create_control("Toolbar", Control, {
+const togglistener = (listeners, enabled=true) => {
+    const entries = Object.entries(listeners);
+    const toggles = {
+        enable:  () => entries.forEach(([name, l]) => l[0].addEventListener(name, l[1])),
+        disable: () => entries.forEach(([name, l]) => l[0].removeEventListener(name, l[1]))
+    };
+    if (enabled) toggles.enable();
+    return toggles;
+};
+
+export const create_toolbar = (title, window, closable=true) => create_control("Toolbar", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("span");
         root.className = "wm toolbar";
-
         const name = document.createElement("span");
         name.className = "wm title";
         name.innerText = title;
@@ -76,31 +88,24 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
         ctx.element = root;
         ctx.root.append(root);
 
-        let prevent = false; // movement parking brake
+        ctx.control.title = name => ctx.root.children[0].innerText = name;
+        const close = () => {
+            if(window.onclose) window.onclose(ctx);
+            ctx.root.remove();
+            listeners.disable();
+        };
 
-        if(can_close) {
-            // toolbar close button
-            add_control(create_button("✖", () => {
-                ctx.root.remove();
-                if(window.onclose) window.onclose(ctx);
-            }, () => prevent = true), ctx.control);
-        }
+        if (closable) add_control(create_button({ display: "✖", classes: ["close"] }, close, () => prevent = true), ctx.control);
 
-        // new window movement handling
+        let prevent = false; // window movement handling
         const move = { x: 0, y: 0, xx: 0, xy: 0 };
           let rect = root.getBoundingClientRect();
         let moving = false;
 
-        root.addEventListener("mousedown", event => {
-            [move.x, move.y] = [event.offsetX - move.xx, event.offsetY - move.xy];
-            rect = root.getBoundingClientRect();
-            moving = true;
-        });
-
-        const update_transform = (x, y) => {
-            const transform = new CSSTransformValue([ new CSSTranslate(CSS.px(r(x)), CSS.px(r(y))) ])
-            ctx.root.attributeStyleMap.set("transform", transform);
-        }
+        const update_transform = ctx.root.attributeStyleMap ? (x, y) => {
+            const translate = new CSSTransformValue([ new CSSTranslate(CSS.px(r(x)), CSS.px(r(y))) ]);
+            ctx.root.attributeStyleMap.set("transform", translate);
+        } : (x, y) => ctx.root.style.transform = `translate(${r(x)}px, ${r(y)}px)`;
 
         const save = localStorage.getItem(wmid_getprefix(true) + window.name);
         if (save) {
@@ -109,24 +114,32 @@ export const create_toolbar = (title, window, can_close=true) => create_control(
             update_transform(move.xx, move.xy);
         }
 
-        document.addEventListener("mousemove", debounce(event => {
-            if (!moving || prevent) return;
-            const [x, y] = [move.xx, move.xy] = [
-                event.clientX - rect.x - move.x,
-                event.clientY - rect.y - move.y
-            ];  update_transform(x, y);
-        }));
-
-        document.addEventListener("click", event => {
-            [move.x, move.y] = [event.offsetX, event.offsetY];
-            rect = root.getBoundingClientRect();
-            moving = false;
-            prevent = false; // window movement serializer, who even cares. what, am I supposed to save a whole IntArray for this?
-            localStorage.setItem(wmid_getprefix(true) + window.name, Math.round(move.xx) + "," + Math.round(move.xy) + "," + move.x + "," + move.y);
+        const listeners = togglistener({
+            "mousedown": [root, event => {
+                [move.x, move.y] = [event.offsetX - move.xx, event.offsetY - move.xy];
+                rect = root.getBoundingClientRect();
+                moving = true;
+            }],
+            "mousemove": [document, debounce(event => {
+                if (!moving || prevent) return;
+                const [x, y] = [move.xx, move.xy] = [
+                    event.clientX - rect.x - move.x,
+                    event.clientY - rect.y - move.y
+                ];  update_transform(x, y);
+            })],
+            "click": [document, event => {
+                if (!moving) return;
+                [move.x, move.y] = [event.offsetX, event.offsetY];
+                rect = root.getBoundingClientRect();
+                moving = false;
+                prevent = false;
+                localStorage.setItem(wmid_getprefix(true) + window.name, Math.round(move.xx) + "," + Math.round(move.xy) + "," + move.x + "," + move.y);
+            }]
         });
     },
-    update_title: (ctx, name) => {
-        ctx.root.children[0].innerText = name;
+    close: (ctx) => {
+        const el = ctx.element.querySelector("button.wm.close");
+        if (el) el.click();
     }
 });
 
@@ -152,7 +165,6 @@ export const create_clock = (onupdate=(_text="")=>null) => create_control("Clock
     init: (ctx) => {
         const root = document.createElement("span");
         root.className = "wm clock";
-
         ctx.element = root;
         ctx.root.append(root);
         ctx.control.update(ctx);
@@ -160,21 +172,22 @@ export const create_clock = (onupdate=(_text="")=>null) => create_control("Clock
     }
 });
 
-export const create_frame = (name, src, width, height, nonbugfix=1, img) => create_control(name, Control, {
+export const create_frame = (name, src, width, height, nip=100, img=false, onload=ev=>ev) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
-        if(nonbugfix < 1) {
+        if(nip > 0) {
             const overlay = document.createElement("div");
             overlay.style = `
                 position: absolute;
                 width: 100%;
-                height: ${nonbugfix*100}%;
+                height: ${nip}%;
                 z-index: 1;
             `;
             root.append(overlay);
         }
         const frame = img ? document.createElement("img") : document.createElement("iframe");
+        frame.onload = onload.bind(ctx);
         frame.className = "wm frame";
         frame.src = src;
         frame.width = width;
@@ -211,13 +224,12 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org:442", interactive=0.1) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org:442", nip=10, onload=ev=>ev) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
         root.className = "wm browser panel";
-        add_control(create_frame("BrowserFrame", src, abs.x_no_border, abs.y_no_border, interactive), ctx.control);
-
+        add_control(create_frame("BrowserFrame", src, abs.x_no_border, abs.y_no_border, nip, false, onload), ctx.control);
         ctx.element = root;
         ctx.root.append(root);
     }
@@ -238,10 +250,10 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
         const theme = window.localStorage.getItem("wm");
         window.current_theme = parseInt(theme ? theme : 0);
 
-        const css_height = ctx.root.attributeStyleMap.get("height");
+        const css_height = parseFloat(ctx.root.style.height.split("px")[0]);
         const fixme = (old=true) => {
-            if (old) ctx.root.attributeStyleMap.set("height", css_height);
-                else ctx.root.attributeStyleMap.set("height", css_height.add(CSS.px(2)));
+            if (old) ctx.root.style.height =  css_height +      "px";
+                else ctx.root.style.height = (css_height + 2) + "px";
             if (old) change_ico("ico");
                 else change_ico("ico", "folder");
         };
@@ -286,11 +298,8 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
 })
 
 export const add_control = (control, parent, to_front=false) => {
-    if(to_front) {
-        parent.children = [control, ...parent.children];
-    } else {
-        parent.children.push(control);
-    }
+    if(to_front) parent.children = [control, ...parent.children];
+    else parent.children.push(control);
 }
 
 export const add_hook = (control, hook, cb=()=>{}) => {

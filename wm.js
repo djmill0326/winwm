@@ -2,7 +2,7 @@ import { wm, add_control, add_hook, Control, wmid_wsprefix } from "./controls.js
 import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
 import { DefaultProgramOptions } from "./util/offsets.js";
 
-export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, cb=ctx=>{}) => wm.Control(name, Control, {
+export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, post_init=ctx=>void 0) => wm.Control(name, Control, {
     children: [],
     hooks: ["mousedown"],
     init: (ctx) => {
@@ -17,15 +17,14 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
         root.className = "wm window shadow";
         if(ctx.name) root.dataset.prg = ctx.name;
         ctx.element = root;
-        add_control(wm.Toolbar(name, ctx.control, can_close), ctx.control, true);
 
-        ctx.control.hooks.forEach(hook => {
-            root.addEventListener(hook, (ev) => {
-                hooks[hook].forEach(cb => cb(ctx, ev))
-            });
-        });
+        const toolbar = wm.Toolbar(name, ctx.control, can_close);
+        ctx.control.close = () => toolbar.close(ctx);
+        add_control(toolbar, ctx.control, true);
 
-        cb(ctx);
+        ctx.control.hooks.forEach(hook => root.addEventListener(hook, ev => hooks[hook].forEach(cb => cb(ctx, ev))));
+
+        post_init(ctx);
         ctx.root.append(root);
     }
 });
@@ -158,7 +157,7 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
             wm.spool_animations();
             const info = { wm_root, wm_desktop, programs, open_programs };
             window.wm = info;
-            console.warn("[winwm] system initialized. runtime info:", info)
+            console.info("[winwm] system initialized. runtime info:", info)
             postinit(info);
         }
     });

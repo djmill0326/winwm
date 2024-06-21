@@ -12,7 +12,8 @@ const parse_request = (_, data) => {
 
 const connections = new Set();
 let   prompt, i;
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+let rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+rl.on("close", () => rl = readline.createInterface({ input: process.stdin, output: process.stdout }));
 const take_input = (socket) => {
     rl.question(prompt, data => {
         connections.forEach(x => x.emit("in", data));

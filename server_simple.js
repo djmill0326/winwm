@@ -42,6 +42,12 @@ module.exports = http.createServer((request, response) => {
     const path = href.split("/");
     const file = path[path.length - 1].split(".");
     if (path.length) {
+        if (path[1] === "cb") {
+            response.setHeader("Content-Type", "text/plain");
+            response.write("you probably can close this window now.");
+            response.end();
+            return;
+        }
         // root directory override
         switch(file[0]) {
             case "":

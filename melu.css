@@ -207,8 +207,8 @@ body {
 }
 
 .old .wm.toolbar .title {
-    flex-grow: 100;
     text-align: left;
+    flex-direction: row;
 }
 
 .wm.window.focus > .toolbar .title {
@@ -257,9 +257,10 @@ body {
 }
 
 .wm.menubar .button {
-    flex-grow: 100;
     border: none;
     margin-left: 6px;
+    flex-grow: 100;
+    text-align: left;
 }
 
 .old .wm.menubar .button {
