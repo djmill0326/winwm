@@ -1,6 +1,6 @@
 import { wm, add_control, add_hook, Control, wmid_wsprefix } from "./controls.js";
 import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
-import { DefaultProgramOptions } from "./util/offsets.js";
+import { DefaultProgramOptions } from "./util/opt.js";
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, post_init=ctx=>void 0) => wm.Control(name, Control, {
     children: [],
@@ -65,7 +65,7 @@ export const focus_window = (ctx) => {
 }
 
 export const run = (ctx) => {
-    if(ctx.element) return;
+    if(ctx.element) ctx.element = void 0;
     init_barebones(ctx);
     init_children(ctx);
     return ctx;
@@ -107,14 +107,14 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
         return read;
     };
     
-    const wm_root = create_window(title, x, y, w, h, false);
+    const wm_root = create_window(title, x, y, w, h, DefaultProgramOptions.unrooted);
     const wm_desktop = wm.Control("Desktop", Control, {
         children: [],
         init: (ctx) => {
             const root = document.createElement("section");
             root.className = "wm desktop row";
             const desktop_programs = Object.keys(program_list).map(name => {
-                programs[name] = () => create_program(name, root, () => {
+                programs[name] = () => create_program(name, opt.unrooted ? document.body : root, () => {
                     const window = program_list[name]();
                     add_hook(window, "onclose", () => open_programs.delete(name));
                     return window;
@@ -138,7 +138,7 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
                     open_programs.set(name, prog);
                 });
 
-                container.append(icon, label);
+                container.append(label, icon);
                 return container;
             });
             root.append(...desktop_programs);
@@ -171,6 +171,8 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
         let x = "";
         open_programs.forEach((_, v) => x += v + ",");
         localStorage.setItem(wmid_wsprefix(), x);
+        if (window.icw) localStorage.setItem("wasteful_clock", "yea");
+        else localStorage.removeItem("wasteful_clock");
         console.debug("[QuickSave] saved.");
     };
 

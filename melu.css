@@ -20,17 +20,17 @@
 }
 
 .chroma {
-    animation: colorful infinite var(--timing) linear;
+    animation: colorful infinite var(--timing);
     box-shadow: 3px 3pt 1pc 1pc var(--base-color);
     padding: 0 4pt;
     background: linear-gradient(var(--shdark), var(--shlite));
 }
 
-   .c.m { color: darkslategray ; }
-   .c.i { color: aliceblue     ; }
-   .c.w { color: palegoldenrod ; }
-   .c.e { color: darksalmon    ; }
-   .c.x { color: aquamarine    ; }
+.c.m { color: darkslategray ; }
+.c.i { color: aliceblue     ; }
+.c.w { color: palegoldenrod ; }
+.c.e { color: darksalmon    ; }
+.c.x { color: aquamarine    ; }
 
 .one,
 .one * {
@@ -67,7 +67,6 @@ body {
     display: flex;
     flex-direction: column;
     user-select: none;
-    transition: all 111ms ease-in-out;
 }
 
 .wm .shadow {
@@ -79,17 +78,22 @@ body {
     background: var(--background-mute);
     color: var(--color-mute);
     margin: 0;
-    font-size: 0.8rem;
+    font-size: .8rem;
 }
 
-.wm.menubar .button {
+.wm.menubar .wm.button {
     border-right: none;
 }
 
 .wm.button {
+    flex-direction: row;
     border: none;
     padding: 4px;
     padding-bottom: 5px;
+}
+
+.wm.button input[type="checkbox"] {
+    margin: 1px;
 }
 
 .old .wm.button {
@@ -131,12 +135,16 @@ body {
     color: var(--color);
     padding: 0;
     border: 1px solid var(--color-mute);
-    opacity: 0.92;
-    transition: transform calc(1s/120) linear;
+    opacity: .9;
+    transition: transform calc(1s/120);
+}
+
+.wm.window.p {
+    transition: transform 0s step-end;
 }
 
 .wm.window.focus {
-    opacity: 0.96;
+    opacity: .95;
     filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
 }
 
@@ -167,6 +175,7 @@ body {
 
 .grow {
     flex-grow: 1;
+    text-align: left;
 }
 
 .wm .clear {
@@ -224,7 +233,6 @@ body {
 .wm.toolbar .button {
     border: none;
     background: none;
-    transition: all 66.67ms ease-in;
     opacity: 1;
     color: var(--color-mute);
     padding: 0 4px;
@@ -238,12 +246,12 @@ body {
 }
 
 .wm.toolbar .button:hover {
-    opacity: 0.9;
+    opacity: .9;
     color: var(--color);
 }
 
 .wm.toolbar .button:active {
-    opacity: 0.95;
+    opacity: .95;
 }
 
 .old .wm.toolbar .button:active {
@@ -282,11 +290,12 @@ body {
 }
 
 .wm.desktop {
-    padding: 3px;
+    padding: 6px;
     flex-grow: 100;
 }
 
 .old .wm.desktop {
+    padding: 3px;
     border: 3px inset var(--background-mute);
     border-top: none;
 }
@@ -295,6 +304,8 @@ body {
     width: fit-content;
     border: none;
     padding: 6px;
+    height: 77px;
+    flex-direction: column-reverse;
 }
 
 .wm.desktop-icon img {
