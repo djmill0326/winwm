@@ -57,7 +57,7 @@ export const mk_program = (context) => {
     console.warn("created program", context);
     const append = mk_append(context);
     const hi = document.createElement("h1");
-    hi.attributeStyleMap.set("display", "none");
+    hi.style.display = "none";
     hi.id = "hi";
     hi.append("hi");
     append(hi);

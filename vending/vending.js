@@ -189,12 +189,12 @@ const dirty = () => {
 
 const program_list = (_, __, w) => ({
     wm_hello: () => create_window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 148, 320, 240, true, (ctx) => {
-        add_control(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 0.75), ctx.control);
+        add_control(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 75), ctx.control);
     }),
     wm_does: () => create_window("wmdoes.jpg", 0, 0, 320, 240, true, (ctx) => {
-        add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 1, true), ctx.control);
+        add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 100, true), ctx.control);
     }),
-    wm_ctl: () => create_window("Control Panel", 144, 222, 160, 72, false, (ctx) => {
+    wm_ctl: () => create_window("Control Panel", 144, 222, 160, 95, false, (ctx) => {
         add_control(wm.ControlPanel(document.body), ctx.control);
     }),
     wm_burg: () => create_window("'burgh.exe (recursive)", 0, 0, w, 271, true, (ctx) => {
@@ -204,4 +204,4 @@ const program_list = (_, __, w) => ({
 });
 
 create_managed("winwm-VendingCompat", document.body, 350, 420, program_list)();
-document.querySelector(".wm.desktop.row").attributeStyleMap.set("flex-direction", "row");
+document.querySelector(".wm.desktop.row").style["flex-direction"] = "row";
