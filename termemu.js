@@ -1,10 +1,10 @@
-import wm from "./wm.js";
+import wm, { $ } from "./wm.js";
 
-let  $       = 0;
+let  _       = 0;
 const strmap = new Map();
 const catc   = new Map();
 const cat    = strtocat => new Function("return " + strtocat);
-const catadd = str => { if (catc.has(strmap.get(str))) return; strmap.set(str, $); catc.set($, cat(str)); return $++; };
+const catadd = str => { if (catc.has(strmap.get(str))) return; strmap.set(str, _); catc.set(_, cat(str)); return _++; };
 const catrem = str => { const v = strmap.get(str); catc.delete(v); strmap.delete(str) };
 const catdel = idx => { return catc.delete(idx) };
 const catcal = (id, ...xargs) => { const f = catc.get(id); return f(...xargs) }
@@ -168,7 +168,17 @@ export const create_term = () => wm.Control("termemu", {
         };
 
         if (window.io) onload();
-        else window.addEventListener("DOMContentLoaded", onload);
+        else {
+            console.info("Waiting for socket.io...");
+            fetch("/socket.io/socket.io.js").then(res => res.text().then(text => {
+                $(document.head).add($("script").html(text));
+                if (window.io) {
+                    console.warn("Socket.io now available.");
+                    //clearInterval(window.tloader);
+                    onload();
+                }
+            }));
+        }
     }
 });
 

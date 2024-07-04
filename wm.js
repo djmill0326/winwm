@@ -1,3 +1,6 @@
+import { $$ } from "./util/$.js";
+export const $ = $$;
+
 import { wm, add_control, add_hook, Control, wmid_wsprefix } from "./controls.js";
 import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
 import { DefaultProgramOptions } from "./util/opt.js";
@@ -51,7 +54,6 @@ const global_focus = {
 };
 
 export const focus_window = (ctx) => {
-    console.debug("[FocusHandler] Window focused.", ctx.control);
     ctx.element.style["z-index"] = global_focus.z;
     global_focus.in_flight.push(ctx.element);
     if (global_focus.in_flight.length !== 1) return;
@@ -157,7 +159,7 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
             wm.spool_animations();
             const info = { wm_root, wm_desktop, programs, open_programs };
             window.wm = info;
-            console.info("[winwm] system initialized. runtime info:", info)
+            console.info("[winwm] system initialized. runtime data:", info)
             postinit(info);
         }
     });

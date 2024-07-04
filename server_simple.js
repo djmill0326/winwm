@@ -23,7 +23,8 @@ const static = async (url, res, fallback="/about.html", onerror=()=>console.log(
             console.log(`${cl}0m[${cd}3m${origin}${cl}0m] got ${cd}6m${url} ${cd}3m(cached)${cr}`);
             res.end();
         } else {
-            zlib.gzip(await fsp.readFile("." + url), (err, data) => {
+            const f = await fsp.readFile("." + url);
+            zlib.gzip(f, (err, data) => {
                 if (err) throw err;
                 memcache.set(url, data);
                 res.write(data);
@@ -77,6 +78,7 @@ module.exports = http.createServer((request, response) => {
                 mime = "image/png";
         }
     }
+    response.setHeader("Cache-Control", "max-age=604800");
     response.setHeader("Content-Type", mime);
     response.setHeader("Content-Encoding", "gzip");
     static(href, response);

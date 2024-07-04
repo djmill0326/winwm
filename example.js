@@ -28,8 +28,8 @@ const program_list = (x, y, w, h) => ({
             ctx.control.close();
         }), ctx.control);
     }),
-    Browser: () => create_window("Browser", centered(pos.x, w), centered(pos.y, h), pos.x, pos.y, true, (ctx) => {
-        add_control(wm.Browser(), ctx.control);
+    Browser: () => create_window("Explore", centered(pos.x, w), centered(pos.y, h), pos.x, pos.y, true, (ctx) => {
+        add_control(wm.Browser("http://ehpt.org"), ctx.control);
     })
 });
 

@@ -1,4 +1,5 @@
 import { pos } from "./util/opt.js";
+import determine_theme from "./util/theme_loader.js";
 
 export const wmid_getref = () => window.wmid && window.wmid.ref ? window.wmid.ref : "unk";
 export const wmid_getprefix = (is_state=false) => is_state ? `ws::${wmid_getref()}::` : `wm::${wmid_getref()}::`;
@@ -194,6 +195,21 @@ export const create_clock = (onupdate=(_text="")=>null) => create_control("Clock
     }
 });
 
+export const get_window = (el, cb) => {
+    let p = el; while (p) {
+        if (!p) break; 
+        if (p.classList.contains("window")) {
+            if (p.classList.contains("wm")) break; 
+            p = null;
+        };
+        p = p.parentElement;
+    }
+    if (p) console.debug("[WindowFinder] Found one.", p);
+    else console.warn("[WindowFinder] Wasted processsor time >:c");
+    if (cb) setTimeout(() => cb(p), 0);
+    return p;
+};
+
 export const create_frame = (name, src, width, height, nip=100, img=false, onload=ev=>ev) => create_control(name, Control, {
     children: [],
     init: (ctx) => {
@@ -218,6 +234,11 @@ export const create_frame = (name, src, width, height, nip=100, img=false, onloa
 
         ctx.element = root;
         ctx.root.append(root);
+        
+        if (img) get_window(root, w => {
+            // todo: expand upon this efficiently, it makes enough sense in my mind
+            w.children[0].querySelector("button.close").addEventListener("click", () => frame.src = "/favicon.ico");
+        });
     }
 });
 
@@ -246,7 +267,7 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org:442", nip=10, onload=ev=>ev) => create_control("Browser", Control, {
+const create_browser = (src="http://ehpt.org", nip=10, onload=ev=>ev) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
@@ -257,10 +278,12 @@ const create_browser = (src="http://ehpt.org:442", nip=10, onload=ev=>ev) => cre
     }
 });
 
-const change_ico = (cls, to="favicon") => {
+const change_ico = (cls, to="folder") => {
     const icons = document.getElementsByClassName(cls);
     const src = to + ".ico";
-    for (let i = 0; i < icons.length; i++) icons[i].src = src;
+    for (let i = 0; i < icons.length; i++) {
+        icons[i].src = src;
+    }
 }
 
 const create_control_panel = (root_el, just_init=false) => create_control("control.exe", {
@@ -275,39 +298,29 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
         else window.icw = false;
 
         const css_height = parseFloat(ctx.root.style.height.split("px")[0]);
-        const fixme = (old=true) => {
-            if (old) ctx.root.style.height =  css_height +      "px";
-                else ctx.root.style.height = (css_height + 6) + "px";
-            if (old) change_ico("ico");
-                else change_ico("ico", "folder");
+        const fixme = (old) => {
+            if (old) {
+                change_ico("ico");
+                ctx.root.style.height = css_height + "px";
+            } else {
+                change_ico("ico", "modern");
+                ctx.root.style.height = (css_height + 6) + "px";
+            }
         };
 
-        const determine_theme = (_, inc=true) => {
-            window.current_theme += inc;
-            switch (window.current_theme) {
-                case 1:
-                    root_el.classList.add("one");
-                    root_el.classList.remove("dos");
-                    break;
-                default:
-                    root_el.classList.add("dos");
-                    root_el.classList.remove("one");
-                    window.current_theme = 0;
-            }
-            if(window.current_theme) root_el.classList.toggle("old");
-            fixme(root_el.classList.contains("old"));
-            window.localStorage.setItem("wm", window.current_theme);
-            document.querySelectorAll("iframe").forEach(frame => {
-                frame.contentWindow.postMessage("theme:=" + window.current_theme);
-            });
+        window.determine_theme = (root, t) => fixme(determine_theme(root, t));
+
+        const get_theme = (_, inc=true) => {
+            let t = window.current_theme = (window.current_theme + inc) % 4;
+            fixme(determine_theme(root_el, t))
+            document.querySelectorAll("iframe").forEach(frame => frame.contentWindow.postMessage("theme:=" + t));
         };
         
-        determine_theme(0, false);
-        window.determine_theme = determine_theme;
+        get_theme(void 0, false);
         if(just_init) return;
         
         add_control(create_button("Wasteful Clock", function () { window.icw = this.control.checked }, null, "toggle", window.icw), ctx.control);
-        add_control(create_button("Switch Theme", determine_theme), ctx.control);
+        add_control(create_button("Switch Theme", get_theme), ctx.control);
         add_control(create_confirmable("Clear localStorage", () => {
             alert("localStorage cleared. reloading...");
             clearInterval(window.wmid.psint);
