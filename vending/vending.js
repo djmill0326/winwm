@@ -188,13 +188,13 @@ const dirty = () => {
 };
 
 const program_list = (_, __, w) => ({
-    wm_hello: () => create_window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 148, 320, 240, true, (ctx) => {
+    wm_hello: () => create_window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 164, 320, 240, true, (ctx) => {
         add_control(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 75), ctx.control);
     }),
     wm_does: () => create_window("wmdoes.jpg", 0, 0, 320, 240, true, (ctx) => {
         add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 100, true), ctx.control);
     }),
-    wm_ctl: () => create_window("Control Panel", 144, 222, 160, 95, false, (ctx) => {
+    wm_ctl: () => create_window("Control Panel", 151, 244, 160, 95, false, (ctx) => {
         add_control(wm.ControlPanel(document.body), ctx.control);
     }),
     wm_burg: () => create_window("'burgh.exe (recursive)", 0, 0, w, 271, true, (ctx) => {

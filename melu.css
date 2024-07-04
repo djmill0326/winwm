@@ -305,6 +305,7 @@ body {
     border: none;
     padding: 6px;
     height: 77px;
+    flex-grow: 1;
     flex-direction: column-reverse;
 }
 
