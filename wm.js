@@ -47,22 +47,22 @@ const init_children = (ctx) => {
     });
 };
 
-const global_focus = {
-    element: [],
+const focus = {
     z: 0,
-    in_flight: []
+    in_flight: null,
+    prev: null
 };
 
-export const focus_window = (ctx) => {
-    ctx.element.style["z-index"] = global_focus.z;
-    global_focus.in_flight.push(ctx.element);
-    if (global_focus.in_flight.length !== 1) return;
+export const focus_window = (ctx, _=void 0, lock=false) => {
+    if (focus.in_flight) return;
+    focus.in_flight = ctx.element;
+    ctx.element.style["z-index"] = ++focus.z;
+    if (lock) ctx.element.dataset.fLock = lock;
     setTimeout(() => {
-        global_focus.z += 1;
-        global_focus.element.forEach(el => el.classList.toggle("focus"));
-        global_focus.element = global_focus.in_flight;
-        global_focus.element.forEach(el => el.classList.toggle("focus"));
-        global_focus.in_flight = [];
+        if (focus.prev && !focus.prev.dataset.fLock) focus.prev.classList.remove("focus");
+        (focus.prev = focus.in_flight).classList.add("focus");
+        focus.in_flight = null;
+        console.debug("[FocusHandler] Window focused.", ctx.control);
     }, 0);
 }
 
@@ -90,7 +90,7 @@ export const Full = {
 }; window.Wm = Full;
 export default Full;
 
-const hooks = {}; // don't use this unless you actually know why I'm writing this comment     /* unreachable code (ts-in-js) */
+const hooks = {};
 const register_hook = (name, cb=_=>{ throw new Error("[idiot-detector] unconfigured callback?"); return typeof object }) => {
     if(!hooks[name]) hooks[name] = [];
     hooks[name].push(cb);
@@ -196,7 +196,7 @@ export const create_managed = (name, root_el, width, height,  program_factory, t
     return (swap_ctx=void 0) => {
         const ctx = swap_ctx ? swap_ctx : program;
         run(ctx);
-        focus_window(ctx);
+        focus_window(ctx, void 0, true);
         window.welcomed = true;
         localStorage.setItem("welcomed", "yea");
     };
