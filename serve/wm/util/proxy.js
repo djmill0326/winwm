@@ -1,4 +1,4 @@
-import determine_theme from "./util/theme_loader.js";
+import determine_theme from "./theme.js";
 
 const theme = window.localStorage.getItem("wm");
 determine_theme(document.body, parseInt(theme ? theme : 0));

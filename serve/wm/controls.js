@@ -1,12 +1,13 @@
-import { pos } from "./util/opt.js";
-import determine_theme from "./util/theme_loader.js";
+import { register } from "./events.js";
+import { pos } from "./options.js";
+import determine_theme from "./util/theme.js";
 
 export const wmid_getref = () => window.wmid && window.wmid.ref ? window.wmid.ref : "unk";
 export const wmid_getprefix = (is_state=false) => is_state ? `ws::${wmid_getref()}::` : `wm::${wmid_getref()}::`;
 export const wmid_wsprefix = () => wmid_getprefix() + "ws";
 
 const create_object = (name, proto) => {
-    proto.name = Object.seal(name);
+    proto.name = name;
     return proto;
 };
 
@@ -15,7 +16,11 @@ export const Control = create_object("Control", {
     init: (ctx) => console.warn("tried to initialize a control with no initialization code") ? "requires configuration" : undefined
 });
 
-export const create_control = (name, proto=Control, hooks={}) => create_object(name, { ...proto, ...hooks });
+export const create_control = (name, proto=Control, hooks={}, should_register=false) => {
+    const control = create_object(name, { ...proto, ...hooks });
+    if (should_register) register(control);
+    return control;
+};
 
 export const create_button = (name, onclick, onmousedown, ...info) => create_control("Button", Control, {
     children: [],
@@ -25,11 +30,12 @@ export const create_button = (name, onclick, onmousedown, ...info) => create_con
         const label = document.createElement("span");
         if (typeof name === "object") {
             label.textContent = name.display;
-            root.classList.add(...name.classes);
+            if (name.classes) root.classList.add(...name.classes);
+            if (name.id) root.dataset.id = name.id;
         } else label.textContent = name;
         root.append(label);
         if (onclick) root.onclick = onclick.bind(ctx);
-        if (onmousedown) root.onmousedown = onmousedown;
+        if (onmousedown) root.onmousedown = onmousedown.bind(ctx);
         if (info[0] === "toggle") {
             const box = document.createElement("input");
             if (typeof info[1] === "boolean") ctx.control.checked = box.checked = info[1]; 
@@ -60,23 +66,42 @@ export const create_confirmable = (name, oncomplete) => create_button(name, func
     }
 });
 
-const animations = { list: [], idx: 0 };
-export const spool_animations = () => {
-    animations.list.forEach(animation => {
-        if (animation.slot === null) return;
-        animation.f(animation.slot);
-        animation.slot = null;
+const animations = { list: [], idx: 0, time: -1 };
+const avg_length = 60;
+const fps = { c: 0, v: [], avg: null };
+export const spool_animations = (t) => {
+    const delta = t - animations.time;
+    animations.time = t;
+    fps.v[fps.c] = delta;
+    fps.c++;
+    if (fps.c >= avg_length) {
+        fps.c = 0;
+        const rate = 1000 / (fps.v.reduce((p, v) => p + v) / fps.v.length);
+        if (!isNaN(rate)) {
+            fps.avg = rate;
+            // console.debug("frame time (approx.)", rate.toFixed(2));
+        }
+    }
+    animations.list.forEach(anim => {
+        const slot = anim.slot;
+        if (slot === null) return;
+        anim.f(slot);
+        anim.prev = slot;
+        anim.slot = null;
     });
     requestAnimationFrame(spool_animations);
 };
 
-export const debounce = (f) => {
-    const idx = ++animations.idx;
-    animations.list[idx] = { f, slot: null };
+export const animate = (f) => {
+    const inf = { f, slot: null, prev: null };
+    animations.list[++animations.idx] = inf;
+    let lock = false;
     return (ev) => {
-        const anim = animations.list[idx];
-        if(anim) anim.slot = ev;
-    };
+        if (lock) return;
+        inf.slot = ev;
+        lock = true;
+        setTimeout(() => lock = false, 1000 / (fps.avg || avg_length));
+    }
 }
 
 export const r = Math.ceil;
@@ -97,7 +122,7 @@ const p = (cl, name="p", l=0) => {
 };
 
 export const create_toolbar = (title, window, closable=true) => create_control("Toolbar", Control, {
-    children: [],
+    children: [], 
     init: (ctx) => {
         const root = document.createElement("span");
         root.className = "wm toolbar";
@@ -110,17 +135,42 @@ export const create_toolbar = (title, window, closable=true) => create_control("
 
         ctx.control.title = name => root.children[0].innerText = name;
         const close = () => {
-            if(window.onclose) window.onclose(ctx);
-            ctx.root.remove();
+            window.control.emit("wm_close", "@toolbar");
             listeners.disable();
         };
 
-        if (closable) add_control(create_button({ display: "✖", classes: ["close"] }, close, () => prevent = true), ctx.control);
+        const tool = (icon, cls, toggle, cb) => add(create_button({ display: icon, classes: [cls] }, () => {
+            if (toggle) window.element.classList.toggle(toggle);
+            if (cb) cb();
+        }, () => gated = true), ctx.control);
+        // why does this end up clean?
+        tool("⇱", "minimize", "hidden");
+        let frame, fdim;
+        setTimeout(() => {
+            frame = window.element.querySelector("iframe");
+            if (frame) fdim = [frame.style.width, frame.style.height];
+        }, 0);
+        tool("🗖", "maximize", "expand", () => {
+            const s = (x, e=window.element) => { e.remove(); x.append(e) };
+            if (window.root.contains(window.element)) {
+                s(document.body);
+                frame.style.width = "100%";
+                frame.style.height = "calc(100vh - 26px)";
+            }
+            else {
+                s(window.root);
+                if (fdim) {
+                    frame.style.width = fdim[0];
+                    frame.style.height = fdim[1];
+                }
+            }
+        });
+        if (closable) tool("✖", "close", null, close);
 
-        let prevent = false; // window movement handling
+        let moving = false; // window movement handling
+        let gated  = false;
         const move = { x: 0, y: 0, xx: 0, xy: 0 };
-          let rect = root.getBoundingClientRect();
-        let moving = false;
+        let rect   = root.getBoundingClientRect();
 
         const update_transform = ctx.root.attributeStyleMap ? (x, y) => {
             const translate = new CSSTransformValue([ new CSSTranslate(CSS.px(r(x)), CSS.px(r(y))) ]);
@@ -135,26 +185,29 @@ export const create_toolbar = (title, window, closable=true) => create_control("
             update_transform(move.xx, move.xy);
         }
 
+        const is_fullscreen = () => window.element.classList.contains("expand");
+
         const listeners = ctx.control.listeners = togglistener({
             "mousedown": [root, event => {
-                [move.x, move.y] = [event.offsetX - move.xx, event.offsetY - move.xy];
-                rect = root.getBoundingClientRect();
+                if (is_fullscreen()) return;
+                [move.x, move.y] = [event.offsetX - move.xx + 5, event.offsetY - move.xy + 1];
                 moving = true;
+                rect = root.getBoundingClientRect();
             }],
-            "mousemove": [document, debounce(event => {
-                if (!moving || prevent) return;
+            "mousemove": [document, animate(event => {
+                if (!moving || gated) return;
                 const [x, y] = [move.xx, move.xy] = [
                     event.clientX - rect.x - move.x,
                     event.clientY - rect.y - move.y
                 ];  update_transform(x, y);
             })],
             "click": [document, event => {
+                gated = false;
                 if (!moving) return;
                 [move.x, move.y] = [event.offsetX, event.offsetY];
                 rect = root.getBoundingClientRect();
                 moving = false;
-                prevent = false;
-                localStorage.setItem(wmid_getprefix(true) + window.name, Math.round(move.xx) + "," + Math.round(move.xy) + "," + move.x + "," + move.y);
+                localStorage.setItem(wmid_getprefix(true) + window.name, r(move.xx) + "," + r(move.xy) + "," + r(move.x) + "," + r(move.y));
             }]
         });
     },
@@ -242,9 +295,7 @@ export const create_frame = (name, src, width, height, nip=100, img=false, onloa
     }
 });
 
-const proxy_frame = { has_been_used_once: void 0 };
-
-const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
+export const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     children: [],
     update: (ctx) => {
         console.log(ctx.element);
@@ -255,8 +306,8 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
         }).then(body => body.text().then(html => ctx.element.innerHTML = html)).catch(e => console.log(e))
     },
     init: (ctx) => {
-        if (proxy_frame.has_been_used_once) throw new Error("Limited-Time Item Expired. (permanently)");
-        proxy_frame.has_been_used_once = true;
+        if (localStorage.lto) throw new Error("Limited-Time Item Expired.");
+        localStorage.lto = true;
         console.log(src);
         const root = document.createElement("div");
         const shadow = root.attachShadow({ mode:"open" });
@@ -267,26 +318,26 @@ const create_proxy_frame = (src) => create_control("ProxyFrame", Control, {
     }
 });
 
-const create_browser = (src="http://ehpt.org", nip=10, onload=ev=>ev) => create_control("Browser", Control, {
+export const create_browser = (src="http://ehpt.org", nip=10, onload=ev=>ev) => create_control("Browser", Control, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
         root.className = "wm browser panel";
-        add_control(create_frame("BrowserFrame", src, pos.x_no_border, pos.y_no_border, nip, false, onload), ctx.control);
+        add(create_frame("BrowserFrame", src, pos.x_no_border, pos.y_no_border, nip, false, onload), ctx.control);
         ctx.element = root;
         ctx.root.append(root);
     }
 });
 
-const change_ico = (cls, to="folder") => {
+export const change_ico = (cls="ico", to="folder") => {
     const icons = document.getElementsByClassName(cls);
-    const src = to + ".ico";
+    const src = `res/${to}.ico`;
     for (let i = 0; i < icons.length; i++) {
         icons[i].src = src;
     }
-}
+};
 
-const create_control_panel = (root_el, just_init=false) => create_control("control.exe", {
+export const create_control_panel = (root_el, just_init=false) => create_control("ctl.exe", {
     children: [],
     init: (ctx) => {
         const root = document.createElement("div");
@@ -297,15 +348,9 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
         if (localStorage.getItem("wasteful_clock") === "yea") window.icw = true;
         else window.icw = false;
 
-        const css_height = parseFloat(ctx.root.style.height.split("px")[0]);
         const fixme = (old) => {
-            if (old) {
-                change_ico("ico");
-                ctx.root.style.height = css_height + "px";
-            } else {
-                change_ico("ico", "modern");
-                ctx.root.style.height = (css_height + 6) + "px";
-            }
+            if (old) change_ico("ico");
+            else change_ico("ico", "modern");
         };
 
         window.determine_theme = (root, t) => fixme(determine_theme(root, t));
@@ -319,9 +364,9 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
         get_theme(void 0, false);
         if(just_init) return;
         
-        add_control(create_button("Wasteful Clock", function () { window.icw = this.control.checked }, null, "toggle", window.icw), ctx.control);
-        add_control(create_button("Switch Theme", get_theme), ctx.control);
-        add_control(create_confirmable("Clear localStorage", () => {
+        add(create_button("Wasteful Clock", function () { window.icw = this.control.checked }, null, "toggle", window.icw), ctx.control);
+        add(create_button("Switch Theme", get_theme), ctx.control);
+        add(create_confirmable("Clear localStorage", () => {
             alert("localStorage cleared. reloading...");
             clearInterval(window.wmid.psint);
             window.wm.open_programs.clear();
@@ -333,16 +378,51 @@ const create_control_panel = (root_el, just_init=false) => create_control("contr
         ctx.element = root;
         ctx.root.append(root);
     }
-})
+});
 
-export const add_control = (control, parent, to_front=false) => {
+export const create_taskbar = (name, open_programs, container="footer") => create_control("locked taskbar", Control, {
+    children: [],
+    init: (ctx) => {
+        const root = document.createElement(container);
+        root.className = "wm taskbar";
+        ctx.element = root;
+
+        const prg_button = (program) => {
+            const btn = create_button({ display: `${program.name} ↺`, id: program.name }, () => {
+                const cl = program.element.classList;
+                cl.toggle("hidden"); // janky as shit, works.
+                if (!cl.contains("hidden")) Wm.focus(program);
+            });
+            // copied from init_children (immediate eval)
+            const ctx_sub = Wm.Ctx(ctx.name + "::" + program.name, btn, ctx.element);
+            Wm.run(ctx_sub);
+        };
+        prg_button({ name: "winwm", element: document.querySelector(`[data-prg="${name}"].window`)});
+        open_programs.forEach(prg_button);
+
+        ctx.control.add = (name) => {
+            const prg = open_programs.get(name);
+            if (prg) prg_button(prg);
+        };
+
+        ctx.control.remove = (name) => {
+            const el = document.querySelector(`.wm.taskbar > [data-id=${name}].button`);
+            if (el) el.remove();
+        };
+
+        ctx.root.append(root);
+        window.wm.wm_bar = ctx;
+    }
+});
+
+export const add = (control, parent, to_front=false) => {
     if(to_front) parent.children = [control, ...parent.children];
     else parent.children.push(control);
-}
+};
 
-export const add_hook = (control, hook, cb=()=>{}) => {
+export const set_hook = (control, hook, cb=()=>{}) => {
     control[hook] = cb;
-}
+};
 
 export const wm = {
     Object: create_object,
@@ -354,7 +434,6 @@ export const wm = {
     ProxyFrame: create_proxy_frame,
     Browser: create_browser,
     ControlPanel: create_control_panel,
-    add_control, add_hook, debounce, spool_animations
-}
-
-export default wm;
+    Taskbar: create_taskbar,
+    add, set_hook, animate, spool_animations
+};  export default wm;

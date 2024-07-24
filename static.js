@@ -1,5 +1,5 @@
-const fsp   = require("fs/promises");
-const fs   = require("fs");
+const { readFile } = require("fs/promises");
+const { watch }    = require("fs");
 const zlib = require("zlib");
 const http = require("http");
 
@@ -7,33 +7,36 @@ const cd = '\u001b[3';
 const cl = '\u001b[9';
 const cr = '\u001b[39m';
 
+const log = (...x) => globalThis.log ? globalThis.log(...x) : console.log(...x);
+
 const memcache = new Map();
-fs.watch("./").on("change", (_, file) => {
-    if (memcache.delete("/" + file)) console.log(
-        `${cd}3m(hotcache)${cl}0m removed cached file ${cd}6m/${file}${cl}0m from memory${cr}`
+watch("./serve", { recursive: true }).on("change", (_, file) => {
+    const fixed = file.replace(/\\+/g, "/");
+    if (memcache.delete("/" + fixed)) log(
+        `${cd}3m(hotcache)${cl}0m removed cached file ${cd}6m/${fixed}${cl}0m from memory${cr}`
     );
 });
 
-const static = async (url, res, fallback="/about.html", onerror=()=>console.log("failed to file.")) => {
+const static = async (url, res, fallback="/about.html", onerror=()=>log("failed to file.")) => {
     const origin = res.req.socket.remoteAddress;
     try {
         let cached = memcache.get(url);
         if (cached) {
             res.write(cached);
-            console.log(`${cl}0m[${cd}3m${origin}${cl}0m] got ${cd}6m${url} ${cd}3m(cached)${cr}`);
+            log(`${cl}0m[${cd}3m${origin}${cl}0m] got ${cd}6m${url} ${cd}3m(cached)${cr}`);
             res.end();
         } else {
-            const f = await fsp.readFile("." + url);
+            const f = await readFile("./serve" + url);
             zlib.gzip(f, (err, data) => {
                 if (err) throw err;
                 memcache.set(url, data);
                 res.write(data);
-                console.log(`${cl}0m[${cd}3m${origin}${cl}0m] got${cr} ${cd}6m${url}${cr}`);
+                log(`${cl}0m[${cd}3m${origin}${cl}0m] got${cr} ${cd}6m${url}${cr}`);
                 res.end();
             });
         }
     } catch (error) {
-        console.log(`${cl}0m[${cl}1m${origin}${cl}0m]${cd}1m 404 ${cd}3mCan't Send ${cl}0m${url}${cr}`);
+        log(`${cl}0m[${cl}1m${origin}${cl}0m]${cd}1m 404 ${cd}3mCan't Send ${cl}0m${url}${cr}`);
         static(fallback, res, "/index.html");
     }
 };

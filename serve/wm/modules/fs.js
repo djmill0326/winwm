@@ -1,4 +1,4 @@
-import wm from "./controls.js";
+import wm from "../controls.js";
 
 export const read_file = (file_list) => {
     const file = file_list[0];
@@ -19,8 +19,8 @@ export const create_menu_bar = (cb=console.debug) => wm.Control("FileSelector", 
     init: (ctx) => {
         const root = document.createElement("section");
         root.className = "wm menubar";
-        wm.add_control(create_file_selector(cb), ctx.control);
-        wm.add_control(wm.Clock(), ctx.control);
+        wm.add(create_file_selector(cb), ctx.control);
+        wm.add(wm.Clock(), ctx.control);
         ctx.element = root;
         ctx.root.append(root);
     }

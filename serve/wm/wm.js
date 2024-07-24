@@ -1,9 +1,9 @@
-import { $$ } from "./util/$.js";
-export const $ = $$;
+import { wm as c, add, Control, wmid_wsprefix, set_hook } from "./controls.js";
+import { DefaultProgramOptions } from "./options.js";
+import { create_file_selector as cfs, create_menu_bar as cmb } from "./modules/fs.js";
 
-import { wm, add_control, add_hook, Control, wmid_wsprefix } from "./controls.js";
-import { create_file_selector as cfs, create_menu_bar as cmb } from "./fs.js";
-import { DefaultProgramOptions } from "./util/opt.js";
+import $$ from "./$.js";
+export const $ = $$;
 
 export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, post_init=ctx=>void 0) => wm.Control(name, Control, {
     children: [],
@@ -21,18 +21,25 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
         if(ctx.name) root.dataset.prg = ctx.name;
         ctx.element = root;
 
-        const toolbar = wm.Toolbar(name, ctx.control, can_close);
-        ctx.control.close = () => toolbar.close(ctx);
-        add_control(toolbar, ctx.control, true);
+        // this will become an actual event system, I promise. TODO: make it work clean and correct
+        if (can_close) ctx.control.on("wm_close", data => {
+            ctx.control.ignore("wm_close");
+            if (ctx.control.onclose) ctx.control.onclose(ctx);
+            root.remove();
+            console.debug(`[Terminator] Closed window ${ctx.control.evid} (${name}). <info: ${data}>`);
+        });
+
+        const toolbar = c.Toolbar(name, ctx, can_close);
+        add(toolbar, ctx.control, true);
 
         ctx.control.hooks.forEach(hook => root.addEventListener(hook, ev => hooks[hook].forEach(cb => cb(ctx, ev))));
 
         post_init(ctx);
         ctx.root.append(root);
     }
-});
+}, true);
 
-export const create_ctx = (name, control, el_root) => wm.Object(name, {
+export const create_ctx = (name, control, el_root) => c.Object(name, {
     root: el_root,
     element: null,
     control, name
@@ -47,6 +54,18 @@ const init_children = (ctx) => {
     });
 };
 
+export const run = (ctx) => {
+    if(ctx.element) ctx.element = void 0;
+    try {
+        init_barebones(ctx);
+        init_children(ctx);
+    } catch (err) {
+        alert(`Failed to initialize '${ctx.name}'\nProgram may be in incomplete/unrecoverable state.\nTry clearing LocalStorage.\nLog information is available in DevTools/Inspect Element Console.`);
+        console.error(err, "ctx", ctx);
+    }
+    return ctx;
+};
+
 const focus = {
     z: 0,
     in_flight: null,
@@ -56,22 +75,16 @@ const focus = {
 export const focus_window = (ctx, _=void 0, lock=false) => {
     if (focus.in_flight) return;
     focus.in_flight = ctx.element;
+    ctx.element.classList.remove("minimized");
     ctx.element.style["z-index"] = ++focus.z;
     if (lock) ctx.element.dataset.fLock = lock;
     setTimeout(() => {
         if (focus.prev && !focus.prev.dataset.fLock) focus.prev.classList.remove("focus");
         (focus.prev = focus.in_flight).classList.add("focus");
         focus.in_flight = null;
-        console.debug("[FocusHandler] Window focused.", ctx.control);
+        console.debug("[HandleFocus] Window focused.", ctx.control);
     }, 0);
 }
-
-export const run = (ctx) => {
-    if(ctx.element) ctx.element = void 0;
-    init_barebones(ctx);
-    init_children(ctx);
-    return ctx;
-};
 
 export const centered = (size, parent_size) => (parent_size - size) / 2;
 
@@ -81,22 +94,13 @@ export const create_program = (name, root, cb, width=800, height=600) => {
     return create_ctx(name, cb(x, y, width, height), root);
 };
 
-export const Full = {
-    ...wm, util: { centered },
-    Ctx: create_ctx, run: run,
-    Window: create_window,
-    Program: create_program,
-    FileSelector: cfs, MenuBar: cmb
-}; window.Wm = Full;
-export default Full;
-
 const hooks = {};
 const register_hook = (name, cb=_=>{ throw new Error("[idiot-detector] unconfigured callback?"); return typeof object }) => {
     if(!hooks[name]) hooks[name] = [];
     hooks[name].push(cb);
 };
 
-export const create_root = (program_list_factory, title="John's iMac - Desktop", postinit=sys=>sys, opt=DefaultProgramOptions) => (x, y, w, h) => {
+export const create_root = (name, program_list_factory, title="John's iMac - Desktop", postinit=sys=>sys, opt=DefaultProgramOptions) => (x, y, w, h) => {
     const program_list = program_list_factory(x, y, w, h);
     const programs = {};
     const open_programs = new Map();
@@ -110,16 +114,19 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
     };
     
     const wm_root = create_window(title, x, y, w, h, DefaultProgramOptions.unrooted);
-    const wm_desktop = wm.Control("Desktop", Control, {
+    const wm_desktop = c.Control("Desktop", Control, {
         children: [],
         init: (ctx) => {
             const root = document.createElement("section");
             root.className = "wm desktop row";
             const desktop_programs = Object.keys(program_list).map(name => {
                 programs[name] = () => create_program(name, opt.unrooted ? document.body : root, () => {
-                    const window = program_list[name]();
-                    add_hook(window, "onclose", () => open_programs.delete(name));
-                    return window;
+                    const wnd = program_list[name]();
+                    set_hook(wnd, "onclose", () => {
+                        open_programs.delete(name);
+                        window.wm.wm_bar.control.remove(name);
+                    });
+                    return wnd;
                 });
 
                 const container = document.createElement("button");
@@ -138,6 +145,7 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
                     run (prog);
                     focus_window(prog);
                     open_programs.set(name, prog);
+                    window.wm.wm_bar.control.add(name);
                 });
 
                 container.append(label, icon);
@@ -156,17 +164,17 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
                 open_programs.set(name, run(programs[name]()))
             });
 
-            wm.spool_animations();
+            c.spool_animations();
             const info = { wm_root, wm_desktop, programs, open_programs };
             window.wm = info;
-            console.info("[winwm] system initialized. runtime data:", info)
+            console.info("[winwm] System initialized. Runtime data:", info)
             postinit(info);
         }
     });
 
     register_hook("mousedown", focus_window);
-    add_control(cmb(), wm_root);
-    add_control(wm_desktop, wm_root);
+    add(cmb(), wm_root);
+    add(wm_desktop, wm_root);
 
     const save_program_state = (e) => {
         if(window.wmid && e) clearInterval(window.wmid.psint);
@@ -181,6 +189,8 @@ export const create_root = (program_list_factory, title="John's iMac - Desktop",
     window.wmid = { psint: setInterval(save_program_state, 60000) };
     window.addEventListener("beforeunload", save_program_state);
 
+    setTimeout(() => run(create_ctx("wm-bar", c.Taskbar(name, open_programs), document.body)), 0);
+
     return wm_root;
 };
 
@@ -190,7 +200,7 @@ const check_welcomeness = () => {
 };
 
 export const create_managed = (name, root_el, width, height,  program_factory, title, postinit=sys=>sys) => {
-    const program = create_program(name, root_el, create_root(program_factory, title, postinit), width, height);
+    const program = create_program(name, root_el, create_root(name, program_factory, title, postinit), width, height);
     window.wmid.ref = name;
     check_welcomeness();
     return (swap_ctx=void 0) => {
@@ -201,3 +211,14 @@ export const create_managed = (name, root_el, width, height,  program_factory, t
         localStorage.setItem("welcomed", "yea");
     };
 };
+
+export const wm = window.Wm = {
+    ...c, run, util: { centered },
+    FileSelector: cfs,
+    MenuBar: cmb,
+    Ctx: create_ctx,
+    Window: create_window,
+    Program: create_program,
+    Full: create_managed,
+    focus: focus_window
+};  export default wm;

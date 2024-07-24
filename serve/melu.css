@@ -32,6 +32,11 @@
 .c.e { color: darksalmon    ; }
 .c.x { color: aquamarine    ; }
 
+.one, .dos {
+    background: var(--background);
+    background: var(--fancy);
+}
+
 .one,
 .one * {
     --background: #111;
@@ -56,8 +61,6 @@ body {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    background: var(--background);
-    background: var(--fancy);
     overflow: hidden;
 }
 
@@ -85,20 +88,23 @@ body {
     border-right: none;
 }
 
+.wm.panel {
+    border: 2px solid var(--background-mute);
+}
+
+.old .wm.panel {
+    border: none;
+}
+
 .wm.button {
     flex-direction: row;
     border: none;
-    padding: 4px;
-    padding-bottom: 5px;
-}
-
-.wm.button input[type="checkbox"] {
-    margin: 1px;
+    padding: 3.5px 5px;
 }
 
 .old .wm.button {
     border: 3px outset var(--background-mute);
-    padding: 0px 2px;
+    padding: 1px 2px;
 }
 
 .wm.button:hover, .wm.menubar:hover {
@@ -111,6 +117,11 @@ body {
 
 .old .wm.button:active, .old .wm.menubar:active {
     border: 3px inset var(--background-mute);
+}
+
+.wm.button input[type="checkbox"] {
+    margin: 1px;
+    align-self: center;
 }
 
 .wm.input {
@@ -135,16 +146,16 @@ body {
     color: var(--color);
     padding: 0;
     border: 1px solid var(--color-mute);
-    opacity: .9;
-    transition: transform calc(1s/120);
+    opacity: .95;
+    transition: transform 0ms step-end;
 }
 
 .wm.window.p {
-    transition: transform 0s step-end;
+    color: pink;
 }
 
 .wm.window.focus {
-    opacity: .95;
+    opacity: .98;
     filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
 }
 
@@ -241,8 +252,16 @@ body {
 .old .wm.toolbar .button {
     border-left: 3px outset var(--background-mute);
     color: #fff;
-    background: #f12;
+    background: var(--color-mute);
     padding: 0 8px 0 6px;
+}
+
+.old .wm.toolbar .close {
+    background: #f12;
+}
+
+.old .wm.toolbar .minimize {
+    background: #01216a;
 }
 
 .wm.toolbar .button:hover {
@@ -256,7 +275,7 @@ body {
 
 .old .wm.toolbar .button:active {
     opacity: 1;
-    color: #f00;
+    color: transparent;
     border-bottom: #f00 3px;
 }
 
@@ -325,4 +344,37 @@ body {
 .wm.desktop-icon a {
     width: 100%;
     text-align: center;
+}
+
+.wm.taskbar {
+    flex-direction: row;
+    border: inset var(--background) 3px;
+    background: var(--background-mute);
+}
+
+.wm.taskbar [data-id="winwm"] {
+    background: var(--color-mute);
+    border-color: var(--color);
+    color: var(--background);
+}
+
+.wm.taskbar {
+    position: fixed;
+    top: calc(100% - 31px);
+}
+
+.old .wm.taskbar {
+    top: calc(100% - 32px);
+}
+
+.wm.hidden {
+    display: none;
+}
+
+.wm.expand {
+    top: 0!important;
+    left: 0!important;
+    transform: none!important;
+    width: 100%!important;
+    height: 100%!important;
 }

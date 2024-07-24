@@ -1,55 +1,42 @@
-import wm, { add_control, add_hook } from "../controls.js";
-import mk, { mk_context, mk_append } from "../util/ui.js";
-import { create_window, create_managed, run } from "../wm.js";
 import { read_managed, get_row } from "./csv.js";
 import schema from "./schema.js";
-const program = mk("vending");
+import wm from "../wm/wm.js";
 
 // frankenstein-ass program
 
 const req_location = "http://ehpt.org/vending/data/";
 const request = uri => read_managed(req_location + uri, schema);
 
-const wrapped = (name, el, to_root=false) => {
-    if(to_root) program.append(el);
-    const ctx = mk_context(el, name);
-    const append = mk_append(ctx);
-    return { ctx, append };
-};
-
-const wrapped_quick = (name, el_type) => wrapped(name, document.createElement(el_type));
-
 const create_page = (name, page_data) => {
-    const wrapper = wrapped_quick(name, "section", true);
-    const root = wrapper.ctx.root;
+    const root = document.createElement("section");
     root.id = "page-" + name;
     root.className = "wm fancy pad";
     const heading = document.createElement("h1");
     heading.className = "page-heading";
     heading.innerText = name;
-    wrapper.append(heading);
+    root.append(heading);
     const table = create_table(name, page_data);
-    wrapper.append(table);
+    root.append(table);
     const selector = document.createElement("a");
     selector.href = "#" + name;
     selector.className = "link";
     selector.innerText = name;
     selector.dataset.arg = name;
     selector.dataset.onclick = "navigate_page";
-    return { name, page_data, wrapper, root, selector };
+    return { name, page_data, root, selector };
 };
 
 const create_table = (name, page_data) => {
     const root = document.createElement("table");
     root.dataset.name = name;
     root.className = "wm page-table";
-    const heading = wrapped_quick("table-header", "thead");
+    const heading = document.createElement("thead");
     schema.forEach(({ x }) => {
         const td = document.createElement("td");
         td.innerText = x;
         heading.append(td);
     });
-    root.append(heading.ctx.root);
+    root.append(heading);
     page_data.forEach((row, index) => {
         const row_el = document.createElement("tbody");
         populate_row(name, index, row, row_el, root);
@@ -60,8 +47,8 @@ const create_table = (name, page_data) => {
 
 const editor = { active: false, page: null, row: null, frame: null };
 const editor_frame_old = document.getElementById("editor");
-const editor_window = () => create_window("VendingEditor", 0, 0, 420, 420, true, ctx => {
-    add_hook(ctx.control, "onclose", () => dirty());
+const editor_window = () => wm.Window("VendingEditor", 0, 0, 420, 420, true, ctx => {
+    wm.set_hook(ctx.control, "onclose", () => dirty());
     // entirely incomplete, whole system needs rewriting.
 });
 
@@ -70,7 +57,7 @@ const open_editor = (page, index, row_el) => {
     editor.active = true;
     editor.page = page;
     editor.row = index;
-    run(window.wm.programs.edit());
+    wm.run(window.wm.programs.edit());
     const row = window.pages[page].page_data[index];
     const root = document.createElement("section");
     root.className = "wm window focus";
@@ -188,20 +175,20 @@ const dirty = () => {
 };
 
 const program_list = (_, __, w) => ({
-    wm_hello: () => create_window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 164, 320, 240, true, (ctx) => {
-        add_control(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 75), ctx.control);
+    wm_hello: () => wm.Window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 164, 320, 240, true, (ctx) => {
+        wm.add(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 75), ctx.control);
     }),
-    wm_does: () => create_window("wmdoes.jpg", 0, 0, 320, 240, true, (ctx) => {
-        add_control(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 100, true), ctx.control);
+    wm_does: () => wm.Window("wmdoes.jpg", 0, 0, 320, 240, true, (ctx) => {
+        wm.add(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 100, true), ctx.control);
     }),
-    wm_ctl: () => create_window("Control Panel", 151, 244, 160, 95, false, (ctx) => {
-        add_control(wm.ControlPanel(document.body), ctx.control);
+    wm_ctl: () => wm.Window("Control Panel", 151, 244, 160, 97, false, (ctx) => {
+        wm.add(wm.ControlPanel(document.body), ctx.control);
     }),
-    wm_burg: () => create_window("'burgh.exe (recursive)", 0, 0, w, 271, true, (ctx) => {
-        add_control(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
+    wm_burg: () => wm.Window("'burgh.exe (recursive)", 0, 0, w, 271, true, (ctx) => {
+        wm.add(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
     }),
     edit: editor_window
 });
 
-create_managed("winwm-VendingCompat", document.body, 350, 420, program_list)();
+wm.Full("winwm-VendingCompat", document.body, 350, 420, program_list)();
 document.querySelector(".wm.desktop.row").style["flex-direction"] = "row";

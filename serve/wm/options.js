@@ -1,5 +1,5 @@
-export const offsetScreenX = 6 // to account for frameborder size
-export const offsetScreenY = 26 // also accounts for border size
+export const offsetScreenX = 10 // to account for frameborder size
+export const offsetScreenY = 30 // also accounts for border size
 
 const browserRatio = 16/10; const tall = true // ratio determination
 const alternateRatio = tall ? (4/3) : (16/9) // extra code here

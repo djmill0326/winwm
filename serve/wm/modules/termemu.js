@@ -1,4 +1,4 @@
-import wm, { $ } from "./wm.js";
+import wm, { $ } from "../wm.js";
 
 let  _       = 0;
 const strmap = new Map();
@@ -17,7 +17,7 @@ export const lilJit = f => (...x) => {
     const msglength  = namelength + e.message.length;
     const length_returnable = Math.min(msglength, l-3);
     let msg = nothing;
-    if (length_returnable < msglength) msg = `Error<${e.name} — ${e.message.substr(0, (l-6) - namelength)}>...`;
+    if (length_returnable < msglength) msg = `Error<${e.name} — ${e.message.substring(0, (l-6) - namelength)}>...`;
     else msg = `Error<${e.name} — ${e.message}`;
     if(el.ref && el.ref.innerHTML) el.ref.innerHTML += "<b color='c e'>runtime error: eval failure</b>";
     console.warn("[WARN] downgraded(captured) Error<" + e.name + ">");
@@ -26,7 +26,7 @@ export const lilJit = f => (...x) => {
 
 export const el = { ref: null, log: [] }, nothing = "", is_empty = x => x.length === nothing.length;
 
-export const create_term = () => wm.Control("termemu", {
+export const create_term = (outer_ctx={}) => wm.Control("termemu", {
     children: [],
     init: (ctx) => {
         const wrapper = document.createElement("div");
@@ -42,6 +42,8 @@ export const create_term = () => wm.Control("termemu", {
             padding: 4px;
             font-family: monospace!important;
             max-height: calc(100% - 64px);
+            line-break: anywhere;
+            text-wrap: wrap;
         `;
         const input = document.createElement("input");
         input.style = `
@@ -92,35 +94,50 @@ export const create_term = () => wm.Control("termemu", {
                     el.append(info_name, info_mode);
                     el.onclick = () => {
                         socket.emit("link", { [handle.name]: handle.mode });
-                    }
+                        input.select();
+                    };
                     root.append(el);
                 });
-                let hiStorage = "";
+                let popped = [];
+                const drain = (add) => {
+                    let build = "";
+                    if (popped.length) build += "$" + popped.reverse().join("$");
+                    if (add) build += "$" + add;
+                    const h = localStorage.termemuHistory;
+                    // rolling chunk buffer model... localStorage👍
+                    if (h.length + build.length > 80 * 24 * 2) localStorage.termemuHistory = h.substring(build.length) + build;
+                    else localStorage.termemuHistory += build;
+                    popped = [];
+                };
                 input.addEventListener("keypress", ev => {
-                    if (!ev.isTrusted) throw new Error("untrusted user-agent 'faketouched' a key.");
+                    if (!ev.isTrusted) throw new Error('(untrusted) user-agent "touched" a key.');
                     if(ev.key === "Enter") { // sending message.
-                        socket.emit("in", input.value.trimEnd());
+                        const value = input.value.trimEnd();
+                        if (!value.length) return;
+                        socket.emit("in", value);
                         const b = document.createElement("b");
-                        b.innerHTML = `<a href='#clicked_on_terminal_socket_id' class='c m'>termemu-${socket.id}</a> 🗣️ ${input.value}`;
+                        b.innerHTML = `<a href='#clicked_on_terminal_socket_id' class='c m'>termemu-${socket.id}</a>: ${value}`;
                         b.className = "c i";
                         terminal.append(b);
                         autoscroll(terminal);
-                        hiStorage = input.placeholder;
+                        drain(input.value);
                         input.placeholder = input.value;
                         input.value = "";
                     }
                     if(ev.key === "<") { // taking from the left.
-                        if (is_empty(input.value)) input.value = 
-                            is_empty(hiStorage) ? input.placeholder : hiStorage;
-                        if(hiStorage === input.value) return;
-                        hiStorage = input.value;
-                        input.value = input.placeholder;
                         ev.preventDefault();
+                        const h = localStorage.termemuHistory;
+                        if (!typeof h === "string" || h.length < 1) return;
+                        let i = h.lastIndexOf("$");
+                        if (i !== -1) {
+                            const slice = h.substring(i + 1);
+                            popped.push(slice);
+                            input.value = slice;
+                            localStorage.termemuHistory = h.substring(0, i);
+                        }
                     }
                     if(ev.key === ">") { // taking from the right.
-                        if (input.value === input.placeholder) return;
-                        input.placeholder = input.value;
-                        input.value = hiStorage;
+                        // do this when your brain works again
                         ev.preventDefault();
                     }
                 });
@@ -131,10 +148,15 @@ export const create_term = () => wm.Control("termemu", {
     
             const single_init = (also) => {
                 if (!has_term) {
+                    has_term = true;
                     div.before(terminal);
                     root.before(input);
-                    has_term = true;
+                    input.select();
                     if(also) also();
+                    if (outer_ctx.control) outer_ctx.control.cleanup = () => {
+                        socket.emit("close");
+                        console.info("[termemu] Program closed, sockets detached.");
+                    }
                     return true;
                 }
             };
@@ -149,7 +171,7 @@ export const create_term = () => wm.Control("termemu", {
                 if (single_init(() => {
                     terminal.innerHTML += "<i class='c x'>" + data + "</i>";
                 })) return;
-                terminal.innerHTML += "<span><a href='#clicked_on_terminal_username' class='c m'>termemu-direct</a> 🗣️ " + data.split("\n")[0].trim() + "</span>";
+                terminal.innerHTML += "<span><a href='#clicked_on_terminal_username' class='c m'>termemu-direct</a>: " + data.split("\n")[0].trim() + "</span>";
                 const args = data.split(":");
                 switch (args[0]) {
                     case "eval":
@@ -167,19 +189,26 @@ export const create_term = () => wm.Control("termemu", {
             ctx.root.append(wrapper);
         };
 
-        if (window.io) onload();
-        else {
+        let t = performance.now();
+        const revive = () => setTimeout(loader, Math.max(0, t - (t = performance.now()) + 5000));
+        const loader = () => {
+            if (window.io) return onload();
             console.info("Waiting for socket.io...");
             fetch("/socket.io/socket.io.js").then(res => res.text().then(text => {
-                $(document.head).add($("script").html(text));
-                if (window.io) {
-                    console.warn("Socket.io now available.");
-                    //clearInterval(window.tloader);
-                    onload();
+                if (!text.length || text.startsWith("<")) {
+                    alert("Broken instance detected. Try refreshing?");
+                    console.error("Failed to read script [socket.io.js]\n", text);
+                    return;
                 }
-            }));
-        }
+                $(document.head).add($("script").html(text));
+                if (!window.io) revive();
+                console.warn("Socket.io now available.");
+                return onload();
+            })).catch(revive);
+        };
+        loader();
     }
 });
 
+if (!localStorage.termemuHistory) localStorage.termemuHistory = "";
 export default create_term;
