@@ -216,5 +216,5 @@ const program_list = (_, __, w) => ({
     edit: editor_window
 });
 
-wm.Full("winwm-VendingCompat", document.body, 350, 420, program_list, null, ()=>{}, opt(({ hiddenCtl: true })))();
+wm.Full("winwm-VendingCompat", document.body, 350, 420, program_list, null, ()=>{}, opt(({ hiddenCtl: true, unrooted: true })))();
 document.querySelector(".wm.desktop.row").style["flex-direction"] = "row";

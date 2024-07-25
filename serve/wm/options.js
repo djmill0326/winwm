@@ -11,4 +11,4 @@ export const browserSizeX = browserSizeY * (isStandard ? browserRatio : alternat
 export const pos = { x: browserSizeX, y: browserSizeY, ox: offsetScreenX, oy: offsetScreenY, x_no_border: browserSizeX - offsetScreenX, y_no_border: browserSizeY - offsetScreenY }
 
 export const DefaultProgramOptions = { alwaysWelcome: false, optionalCtl: false, hiddenCtl: false, unrooted: false };
-export const opt = (...options) => ({ ...DefaultProgramOptions, options });
+export const opt = (options) => ({ ...DefaultProgramOptions, ...options });
