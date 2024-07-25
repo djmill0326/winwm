@@ -1,6 +1,7 @@
 import { read_managed, get_row } from "./csv.js";
 import schema from "./schema.js";
-import wm from "../wm/wm.js";
+import wm, { centered } from "../wm/wm.js";
+import {opt} from "../wm/options.js";
 
 // frankenstein-ass program
 
@@ -45,19 +46,37 @@ const create_table = (name, page_data) => {
     return root;
 }
 
-const editor = { active: false, page: null, row: null, frame: null };
+const editor = { active: false, page: null, row: null };
 const editor_frame_old = document.getElementById("editor");
-const editor_window = () => wm.Window("VendingEditor", 0, 0, 420, 420, true, ctx => {
-    wm.set_hook(ctx.control, "onclose", () => dirty());
-    // entirely incomplete, whole system needs rewriting.
-});
+let editor_frame_ctl = null;
+const editor_window = () => {
+    // query isn't necessary here, I'm just lazy
+    const existent = document.querySelector('[data-prg="edit"]');
+    if (existent) return;
+    return wm.Window("VendingEditor", 20, 88, 420, 420, true, ctx => {
+        wm.set_hook(ctx.control, "onclose", () => dirty());
+        if (editor_frame_ctl) wm.add_immediate(wm.Basic("editor-inner", editor_frame_ctl), ctx);
+        else {
+            const page = localStorage.savedPage;
+            const index = localStorage.savedIndex;
+            console.log(page, index);
+            if (page || index) {
+                const fixer = () => {
+                    if (!window.pages) return setTimeout(fixer, 100/6);
+                    ctx.control.emit("wm_close", "@editor-patch");
+                    if (page) document.querySelector(`[data-arg="${page}"]`).click();
+                    if (index) document.querySelector(`tr[data-index="${index}"]`).click();
+                }; fixer();
+            }
+        }
+    });
+}
 
 const open_editor = (page, index, row_el) => {
     dirty();
     editor.active = true;
     editor.page = page;
     editor.row = index;
-    wm.run(window.wm.programs.edit());
     const row = window.pages[page].page_data[index];
     const root = document.createElement("section");
     root.className = "wm window focus";
@@ -91,7 +110,12 @@ const open_editor = (page, index, row_el) => {
         control_frame.append(label, root);
     });
     root.append(heading, control_frame);
-    (editor.frame ? editor.frame : editor_frame_old).append(root);
+    editor_frame_ctl = control_frame;
+    // editor_frame_old.append(root, control_frame);
+    const ctx = wm.run(window.wm.programs.edit());
+    ctx.control.title(label.innerText);
+    localStorage.savedPage = page;
+    localStorage.savedIndex = index;
 }
 
 const selector = document.getElementById("selector");
@@ -174,15 +198,17 @@ const dirty = () => {
     }
 };
 
+const ww = window.innerWidth;
+const wh = window.innerHeight;
 const program_list = (_, __, w) => ({
-    wm_hello: () => wm.Window(window.welcomed ? "winwm — About" : "Welcome to winwm.", 14, 164, 320, 240, true, (ctx) => {
+    wm_hello: () => wm.Window(window.welcomed ? "winwm — About" : "Welcome to winwm.", centered(320, ww), centered(240, wh), 320, 240, true, (ctx) => {
         wm.add(wm.Frame("HelloFrame", "/vending/about.html", 314, 214, 75), ctx.control);
+    }, 1),
+    wm_ctl: () => wm.Window("Control Panel", ww - 160, wh - 123, 160, 123, false, (ctx) => {
+        wm.add(wm.ControlPanel(document.body), ctx.control);
     }),
     wm_does: () => wm.Window("wmdoes.jpg", 0, 0, 320, 240, true, (ctx) => {
-        wm.add(wm.Frame("Wmdoes", "./wmdoes.jpg", 314, 214, 100, true), ctx.control);
-    }),
-    wm_ctl: () => wm.Window("Control Panel", 151, 244, 160, 97, false, (ctx) => {
-        wm.add(wm.ControlPanel(document.body), ctx.control);
+        wm.add(wm.Frame("Wmdoes", "/res/wmdoes.jpg", 314, 214, 100, true), ctx.control);
     }),
     wm_burg: () => wm.Window("'burgh.exe (recursive)", 0, 0, w, 271, true, (ctx) => {
         wm.add(wm.ProxyFrame("http://ehpt.org/vending"), ctx.control);
@@ -190,5 +216,5 @@ const program_list = (_, __, w) => ({
     edit: editor_window
 });
 
-wm.Full("winwm-VendingCompat", document.body, 350, 420, program_list)();
+wm.Full("winwm-VendingCompat", document.body, 350, 420, program_list, null, ()=>{}, opt(({ hiddenCtl: true })))();
 document.querySelector(".wm.desktop.row").style["flex-direction"] = "row";

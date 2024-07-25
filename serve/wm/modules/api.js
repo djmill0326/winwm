@@ -1,3 +1,4 @@
+// module. count: 2
 const baseUrl = "https://osu.ppy.sh/api/v2";
 const authUrl = "https://osu.ppy.sh/oauth/authorize";
 const redirUrl = "http://ehpt.org/cb/osu";
@@ -13,7 +14,7 @@ export const parse_callback = (loc) => {
         const tag = loc.pathname.substring(4, loc.pathname.length);
         const parsed = {};
         loc.search.substring(1, loc.search.length).split("&").forEach(p => {
-            const [k,   v] = p.split("=");
+            const [k, v] = p.split("=");
             parsed[k] = v;
         });
         let was_set;
@@ -31,3 +32,6 @@ export const parse_callback = (loc) => {
         }
     } catch (_) {}
 };
+
+inject("authReqUrl", authReqUrl);
+inject("parse_callback", parse_callback);

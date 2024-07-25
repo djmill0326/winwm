@@ -5,7 +5,7 @@
     --timing: calc(var(--x1) * 210s);
     --shdark: rgba(0, 0, 0, var(--x2));
     --shlite: rgba(255, 255, 255, var(--x2));
-    --fancy: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);
+    --fancy: linear-gradient(90deg, rgba(0,212,255,1) 0%, rgba(9,9,121,1) 35%, rgba(2,0,36,1) 100%);
 }
 
 @keyframes colorful {
@@ -19,11 +19,16 @@
     93%  { color: lightcoral;    }
 }
 
-.chroma {
-    animation: colorful infinite var(--timing);
-    box-shadow: 3px 3pt 1pc 1pc var(--base-color);
+.chroma, .chroma * {
+    animation: colorful 12s infinite linear;
+    outline: hotpink solid .333px !important;
+    border-radius: 4pt !important;
+}
+
+.chroma *
+
+strong.chroma {
     padding: 0 4pt;
-    background: linear-gradient(var(--shdark), var(--shlite));
 }
 
 .c.m { color: darkslategray ; }
@@ -104,7 +109,7 @@ body {
 
 .old .wm.button {
     border: 3px outset var(--background-mute);
-    padding: 1px 2px;
+    padding: 0.667px 2px;
 }
 
 .wm.button:hover, .wm.menubar:hover {
@@ -147,7 +152,7 @@ body {
     padding: 0;
     border: 1px solid var(--color-mute);
     opacity: .95;
-    transition: transform 0ms step-end;
+    transition: transform 0s linear;
 }
 
 .wm.window.p {
@@ -360,11 +365,7 @@ body {
 
 .wm.taskbar {
     position: fixed;
-    top: calc(100% - 31px);
-}
-
-.old .wm.taskbar {
-    top: calc(100% - 32px);
+    top: calc(100% - 30px);
 }
 
 .wm.hidden {
@@ -377,4 +378,13 @@ body {
     transform: none!important;
     width: 100%!important;
     height: 100%!important;
+}
+
+.wm.form {
+    display: flex;
+    flex-direction: row;
+}
+
+.wm.form .wm.input {
+    display: inline;
 }

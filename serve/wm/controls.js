@@ -1,6 +1,8 @@
 import { register } from "./events.js";
 import { pos } from "./options.js";
-import determine_theme from "./util/theme.js";
+import determine_theme, { watch_theme } from "./util/theme.js";
+import { spool_animations, animate } from "./util/animation.js";
+import { load } from "./modules/loader.js";
 
 export const wmid_getref = () => window.wmid && window.wmid.ref ? window.wmid.ref : "unk";
 export const wmid_getprefix = (is_state=false) => is_state ? `ws::${wmid_getref()}::` : `wm::${wmid_getref()}::`;
@@ -13,7 +15,7 @@ const create_object = (name, proto) => {
 
 export const Control = create_object("Control", {
     children: null,
-    init: (ctx) => console.warn("tried to initialize a control with no initialization code") ? "requires configuration" : undefined
+    init: (_ctx) => console.warn("tried to initialize a control with no initialization code")
 });
 
 export const create_control = (name, proto=Control, hooks={}, should_register=false) => {
@@ -66,44 +68,6 @@ export const create_confirmable = (name, oncomplete) => create_button(name, func
     }
 });
 
-const animations = { list: [], idx: 0, time: -1 };
-const avg_length = 60;
-const fps = { c: 0, v: [], avg: null };
-export const spool_animations = (t) => {
-    const delta = t - animations.time;
-    animations.time = t;
-    fps.v[fps.c] = delta;
-    fps.c++;
-    if (fps.c >= avg_length) {
-        fps.c = 0;
-        const rate = 1000 / (fps.v.reduce((p, v) => p + v) / fps.v.length);
-        if (!isNaN(rate)) {
-            fps.avg = rate;
-            // console.debug("frame time (approx.)", rate.toFixed(2));
-        }
-    }
-    animations.list.forEach(anim => {
-        const slot = anim.slot;
-        if (slot === null) return;
-        anim.f(slot);
-        anim.prev = slot;
-        anim.slot = null;
-    });
-    requestAnimationFrame(spool_animations);
-};
-
-export const animate = (f) => {
-    const inf = { f, slot: null, prev: null };
-    animations.list[++animations.idx] = inf;
-    let lock = false;
-    return (ev) => {
-        if (lock) return;
-        inf.slot = ev;
-        lock = true;
-        setTimeout(() => lock = false, 1000 / (fps.avg || avg_length));
-    }
-}
-
 export const r = Math.ceil;
 
 const togglistener = (listeners, enabled=true) => {
@@ -133,7 +97,7 @@ export const create_toolbar = (title, window, closable=true) => create_control("
         ctx.element = root;
         ctx.root.append(root);
 
-        ctx.control.title = name => root.children[0].innerText = name;
+        window.control.title = name => root.children[0].innerText = name;
         const close = () => {
             window.control.emit("wm_close", "@toolbar");
             listeners.disable();
@@ -179,11 +143,11 @@ export const create_toolbar = (title, window, closable=true) => create_control("
 
         const save = localStorage.getItem(wmid_getprefix(true) + window.name);
         if (save) {
-            const pos = save.split(",").map(parseFloat);
-            [move.xx, move.xy, move.x, move.y] = pos;
+            [move.xx, move.xy, move.x, move.y] = save.split(",").map(parseFloat);
             p(ctx.root.classList);
             update_transform(move.xx, move.xy);
         }
+
 
         const is_fullscreen = () => window.element.classList.contains("expand");
 
@@ -194,13 +158,13 @@ export const create_toolbar = (title, window, closable=true) => create_control("
                 moving = true;
                 rect = root.getBoundingClientRect();
             }],
-            "mousemove": [document, animate(event => {
+            "mousemove": [document, animate(coord => {
                 if (!moving || gated) return;
                 const [x, y] = [move.xx, move.xy] = [
-                    event.clientX - rect.x - move.x,
-                    event.clientY - rect.y - move.y
+                    coord.x - rect.x - move.x,
+                    coord.y - rect.y - move.y
                 ];  update_transform(x, y);
-            })],
+            }, (ev) => ({ x: ev.clientX, y: ev.clientY }))],
             "click": [document, event => {
                 gated = false;
                 if (!moving) return;
@@ -219,7 +183,7 @@ export const create_toolbar = (title, window, closable=true) => create_control("
 
 const pad_two = (x, add="0") => {
     const str = x.toString();
-    return str.length === 1 ? add + str : str.substr(0, 2);
+    return str.length === 1 ? add + str : str.substring(0, 2);
 }
 
 const daily_ms = (999.999 - -0.001) * 60 * 60 * 24;
@@ -254,7 +218,7 @@ export const get_window = (el, cb) => {
         if (p.classList.contains("window")) {
             if (p.classList.contains("wm")) break; 
             p = null;
-        };
+        }
         p = p.parentElement;
     }
     if (p) console.debug("[WindowFinder] Found one.", p);
@@ -262,6 +226,14 @@ export const get_window = (el, cb) => {
     if (cb) setTimeout(() => cb(p), 0);
     return p;
 };
+
+export const create_basic = (name, element=document.createElement("div")) => create_control(name, Control, {
+    children: [],
+    init: (ctx) => {
+        ctx.element = element;
+        ctx.root.append(element);
+    }
+});
 
 export const create_frame = (name, src, width, height, nip=100, img=false, onload=ev=>ev) => create_control(name, Control, {
     children: [],
@@ -310,24 +282,41 @@ export const create_proxy_frame = (src) => create_control("ProxyFrame", Control,
         localStorage.lto = true;
         console.log(src);
         const root = document.createElement("div");
-        const shadow = root.attachShadow({ mode:"open" });
-        ctx.element = shadow;
+        ctx.element = root.attachShadow({ mode:"open" });
         ctx.src = src;
         ctx.control.update(ctx);
         ctx.root.append(root);
     }
 });
 
-export const create_browser = (src="http://ehpt.org", nip=10, onload=ev=>ev) => create_control("Browser", Control, {
-    children: [],
-    init: (ctx) => {
-        const root = document.createElement("div");
-        root.className = "wm browser panel";
-        add(create_frame("BrowserFrame", src, pos.x_no_border, pos.y_no_border, nip, false, onload), ctx.control);
-        ctx.element = root;
-        ctx.root.append(root);
-    }
-});
+export const create_browser = (src="https://wikipedia.com", nip=10, onload=ev=>ev) => {
+    const browser = create_control("Browser", Control, {
+        children: [],
+        wait: true,
+        init: (ctx) => {
+            const root = document.createElement("div");
+            root.className = "wm browser panel";
+    
+            add(forms.Form(
+                "browser",
+                ev => {
+                    const url = ev.target[0].value;
+                    ctx.element.querySelector("iframe").src = ev.target[0].value = url.startsWith("http") ? url : "http://" + url;
+                },
+                { type: "text", placeholder: "Enter URL", id: "browser-url", cls: "grow", value: "https://wikipedia.com" },
+                { type: "submit", value: "🔎︎" }
+            ), ctx.control);
+
+            add(create_frame("BrowserFrame", src, pos.x_no_border, pos.y_no_border, nip, false, onload), ctx.control);
+
+            ctx.element = root;
+            ctx.root.append(root);
+        }
+    }, true);
+
+    load("forms", () => browser.continue());
+    return browser;
+};
 
 export const change_ico = (cls="ico", to="folder") => {
     const icons = document.getElementsByClassName(cls);
@@ -345,20 +334,16 @@ export const create_control_panel = (root_el, just_init=false) => create_control
 
         const theme = window.localStorage.getItem("wm");
         window.current_theme = parseInt(theme ? theme : 0);
-        if (localStorage.getItem("wasteful_clock") === "yea") window.icw = true;
-        else window.icw = false;
+        window.icw = localStorage.getItem("wasteful_clock") === "yea";
 
-        const fixme = (old) => {
+        watch_theme((_, old) => {
             if (old) change_ico("ico");
             else change_ico("ico", "modern");
-        };
-
-        window.determine_theme = (root, t) => fixme(determine_theme(root, t));
+        });
 
         const get_theme = (_, inc=true) => {
-            let t = window.current_theme = (window.current_theme + inc) % 4;
-            fixme(determine_theme(root_el, t))
-            document.querySelectorAll("iframe").forEach(frame => frame.contentWindow.postMessage("theme:=" + t));
+            determine_theme(root_el, window.current_theme, inc);
+            document.querySelectorAll("iframe").forEach(frame => frame.contentWindow.postMessage("theme:=" + window.current_theme));
         };
         
         get_theme(void 0, false);
@@ -366,6 +351,7 @@ export const create_control_panel = (root_el, just_init=false) => create_control
         
         add(create_button("Wasteful Clock", function () { window.icw = this.control.checked }, null, "toggle", window.icw), ctx.control);
         add(create_button("Switch Theme", get_theme), ctx.control);
+        add(create_button("Toggle Chroma", () => document.body.classList.toggle("chroma")), ctx.control);
         add(create_confirmable("Clear localStorage", () => {
             alert("localStorage cleared. reloading...");
             clearInterval(window.wmid.psint);
@@ -397,7 +383,7 @@ export const create_taskbar = (name, open_programs, container="footer") => creat
             const ctx_sub = Wm.Ctx(ctx.name + "::" + program.name, btn, ctx.element);
             Wm.run(ctx_sub);
         };
-        prg_button({ name: "winwm", element: document.querySelector(`[data-prg="${name}"].window`)});
+        prg_button({ name: "winwm", root: document.body, element: document.querySelector(`[data-prg="${name}"].window`)});
         open_programs.forEach(prg_button);
 
         ctx.control.add = (name) => {
@@ -406,7 +392,7 @@ export const create_taskbar = (name, open_programs, container="footer") => creat
         };
 
         ctx.control.remove = (name) => {
-            const el = document.querySelector(`.wm.taskbar > [data-id=${name}].button`);
+            const el = document.querySelector(`.wm.taskbar > [data-id="${name}"].button`);
             if (el) el.remove();
         };
 
@@ -430,6 +416,7 @@ export const wm = {
     Button: create_button,
     Toolbar: create_toolbar,
     Clock: create_clock,
+    Basic: create_basic,
     Frame: create_frame,
     ProxyFrame: create_proxy_frame,
     Browser: create_browser,

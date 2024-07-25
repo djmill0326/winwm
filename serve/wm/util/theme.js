@@ -1,4 +1,7 @@
-export default function determine_theme(root, t) {
+const cb = [];
+
+export default function determine_theme(root, theme, inc=false) {
+    let t = window.current_theme = (theme + inc) % 4;
     const cl = root.classList;
     cl.remove("old", "one", "dos");
     const o = !t || t === 1;
@@ -6,5 +9,7 @@ export default function determine_theme(root, t) {
     if (t % 2) cl.add("one");
     else cl.add("dos");
     window.localStorage.setItem("wm", t);
-    return o;
+    cb.forEach(f => f(t, o));
 };
+
+export const watch_theme = (f) => cb.push(f);

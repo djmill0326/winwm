@@ -1,11 +1,11 @@
-import { wm as c, add, Control, wmid_wsprefix, set_hook } from "./controls.js";
+import { wm as c, add, Control, wmid_wsprefix } from "./controls.js";
 import { DefaultProgramOptions } from "./options.js";
 import { create_file_selector as cfs, create_menu_bar as cmb } from "./modules/fs.js";
 
 import $$ from "./$.js";
 export const $ = $$;
 
-export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, post_init=ctx=>void 0) => wm.Control(name, Control, {
+export const create_window = (name, x=0, y=0, width=800, height=600, can_close=true, post_init=_ctx=>void 0, z=0, defer=false) => wm.Control(name, Control, {
     children: [],
     hooks: ["mousedown"],
     init: (ctx) => {
@@ -17,12 +17,18 @@ export const create_window = (name, x=0, y=0, width=800, height=600, can_close=t
             width:    ${width}px;
             height:   ${height}px;
         `;
+        root.style.zIndex = z;
         root.className = "wm window shadow";
         if(ctx.name) root.dataset.prg = ctx.name;
         ctx.element = root;
 
         // this will become an actual event system, I promise. TODO: make it work clean and correct
         if (can_close) ctx.control.on("wm_close", data => {
+            const filename = ctx.control.filename;
+            if (filename) {
+                window.wm.open_programs.delete(filename, ctx);
+                if (window.wm.wm_bar) window.wm.wm_bar.control.remove(filename);
+            }
             ctx.control.ignore("wm_close");
             if (ctx.control.onclose) ctx.control.onclose(ctx);
             root.remove();
@@ -54,17 +60,35 @@ const init_children = (ctx) => {
     });
 };
 
-export const run = (ctx) => {
+export const run = (ctx, minimized) => {
     if(ctx.element) ctx.element = void 0;
     try {
-        init_barebones(ctx);
-        init_children(ctx);
+        const load = () => {
+            init_barebones(ctx);
+            init_children(ctx);
+            if (ctx.element && minimized) ctx.element.classList.add("hidden");
+            const name = ctx.control.filename;
+            if (name) {
+                if (!window.wm) window.wm = {};
+                if (!window.wm.open_programs) window.wm.open_programs = new Map();
+                window.wm.open_programs.set(name, ctx);
+                if (window.wm.wm_bar) window.wm.wm_bar.control.add(name);
+            }
+        };
+        if (ctx.control.wait) ctx.control.continue = load;
+        else load();
     } catch (err) {
         alert(`Failed to initialize '${ctx.name}'\nProgram may be in incomplete/unrecoverable state.\nTry clearing LocalStorage.\nLog information is available in DevTools/Inspect Element Console.`);
         console.error(err, "ctx", ctx);
     }
     return ctx;
 };
+
+export const add_immediate = (control, ctx) => {
+    add(control, ctx.control);
+    const ctx_sub = create_ctx(ctx.control.name + "::" + control.name, control, ctx.element);
+    run(ctx_sub);
+}
 
 const focus = {
     z: 0,
@@ -75,7 +99,7 @@ const focus = {
 export const focus_window = (ctx, _=void 0, lock=false) => {
     if (focus.in_flight) return;
     focus.in_flight = ctx.element;
-    ctx.element.classList.remove("minimized");
+    ctx.element.classList.remove("hidden");
     ctx.element.style["z-index"] = ++focus.z;
     if (lock) ctx.element.dataset.fLock = lock;
     setTimeout(() => {
@@ -95,7 +119,7 @@ export const create_program = (name, root, cb, width=800, height=600) => {
 };
 
 const hooks = {};
-const register_hook = (name, cb=_=>{ throw new Error("[idiot-detector] unconfigured callback?"); return typeof object }) => {
+const register_hook = (name, cb=_=>{ throw new Error("[idiot-detector] unconfigured callback?") }) => {
     if(!hooks[name]) hooks[name] = [];
     hooks[name].push(cb);
 };
@@ -113,7 +137,7 @@ export const create_root = (name, program_list_factory, title="John's iMac - Des
         return read;
     };
     
-    const wm_root = create_window(title, x, y, w, h, DefaultProgramOptions.unrooted);
+    const wm_root = create_window(title, x, y, w, h, opt.unrooted);
     const wm_desktop = c.Control("Desktop", Control, {
         children: [],
         init: (ctx) => {
@@ -122,10 +146,7 @@ export const create_root = (name, program_list_factory, title="John's iMac - Des
             const desktop_programs = Object.keys(program_list).map(name => {
                 programs[name] = () => create_program(name, opt.unrooted ? document.body : root, () => {
                     const wnd = program_list[name]();
-                    set_hook(wnd, "onclose", () => {
-                        open_programs.delete(name);
-                        window.wm.wm_bar.control.remove(name);
-                    });
+                    wnd.filename = name;
                     return wnd;
                 });
 
@@ -139,13 +160,11 @@ export const create_root = (name, program_list_factory, title="John's iMac - Des
                 label.innerText = name;
 
                 container.addEventListener("click", () => {
-                    let  prog;
-                    if  (prog = open_programs.get(name)) return focus_window(prog);
+                    let  prog = open_programs.get(name);
+                    if  (prog) return focus_window(prog);
                     else prog = programs[name]();
                     run (prog);
                     focus_window(prog);
-                    open_programs.set(name, prog);
-                    window.wm.wm_bar.control.add(name);
                 });
 
                 container.append(label, icon);
@@ -155,16 +174,17 @@ export const create_root = (name, program_list_factory, title="John's iMac - Des
             ctx.element = root;
             ctx.root.append(root);
 
-            if (!window.welcomed || opt.alwaysWelcome) open_programs.set("wm_hello", run(programs.wm_hello()));
-            if (!opt.optionalCtl) open_programs.set("wm_ctl", run(programs.wm_ctl()));
+            run(programs.wm_ctl(), true);
+            if (!window.welcomed || opt.alwaysWelcome) run(programs.wm_hello());
 
             const to_open = read_program_state();
             to_open.forEach(name => {
                 if (open_programs.has(name)) return;
-                open_programs.set(name, run(programs[name]()))
+                run(programs[name](), opt.hiddenCtl && name === "wm_ctl");
             });
 
             c.spool_animations();
+            if (window.wm && window.wm.open_programs) window.wm.open_programs.forEach((prg, name) => open_programs.set(name, prg));
             const info = { wm_root, wm_desktop, programs, open_programs };
             window.wm = info;
             console.info("[winwm] System initialized. Runtime data:", info)
@@ -195,12 +215,11 @@ export const create_root = (name, program_list_factory, title="John's iMac - Des
 };
 
 const check_welcomeness = () => {
-    if (localStorage.getItem("welcomed") === "yea") window.welcomed = true;
-    else window.welcomed = false;
+    window.welcomed = localStorage.getItem("welcomed") === "yea";
 };
 
-export const create_managed = (name, root_el, width, height,  program_factory, title, postinit=sys=>sys) => {
-    const program = create_program(name, root_el, create_root(name, program_factory, title, postinit), width, height);
+export const create_managed = (name, root_el, width, height,  program_factory, title, postinit=sys=>sys, opt=DefaultProgramOptions) => {
+    const program = create_program(name, root_el, create_root(name, program_factory, title, postinit, opt), width, height);
     window.wmid.ref = name;
     check_welcomeness();
     return (swap_ctx=void 0) => {
@@ -213,7 +232,7 @@ export const create_managed = (name, root_el, width, height,  program_factory, t
 };
 
 export const wm = window.Wm = {
-    ...c, run, util: { centered },
+    ...c, run, add_immediate, util: { centered },
     FileSelector: cfs,
     MenuBar: cmb,
     Ctx: create_ctx,

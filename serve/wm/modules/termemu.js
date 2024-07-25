@@ -1,4 +1,5 @@
-import wm, { $ } from "../wm.js";
+// module. count: 2
+import wm, { $ } from "/wm/wm.js";
 
 let  _       = 0;
 const strmap = new Map();
@@ -124,7 +125,7 @@ export const create_term = (outer_ctx={}) => wm.Control("termemu", {
                         input.placeholder = input.value;
                         input.value = "";
                     }
-                    if(ev.key === "<") { // taking from the left.
+                    if(ev.key === "<") {
                         ev.preventDefault();
                         const h = localStorage.termemuHistory;
                         if (!typeof h === "string" || h.length < 1) return;
@@ -135,10 +136,6 @@ export const create_term = (outer_ctx={}) => wm.Control("termemu", {
                             input.value = slice;
                             localStorage.termemuHistory = h.substring(0, i);
                         }
-                    }
-                    if(ev.key === ">") { // taking from the right.
-                        // do this when your brain works again
-                        ev.preventDefault();
                     }
                 });
                 wrapper.append(div, root);
@@ -212,3 +209,8 @@ export const create_term = (outer_ctx={}) => wm.Control("termemu", {
 
 if (!localStorage.termemuHistory) localStorage.termemuHistory = "";
 export default create_term;
+
+if (window.injected && window.injected.has("termemu")) {
+    inject("Jit", lilJit);
+    inject("Terminal", create_term)
+} 

@@ -1,5 +1,5 @@
-export const offsetScreenX = 10 // to account for frameborder size
-export const offsetScreenY = 30 // also accounts for border size
+export const offsetScreenX = 9 // to account for frameborder size
+export const offsetScreenY = 64 // also accounts for border size
 
 const browserRatio = 16/10; const tall = true // ratio determination
 const alternateRatio = tall ? (4/3) : (16/9) // extra code here
@@ -10,4 +10,5 @@ export const browserSizeX = browserSizeY * (isStandard ? browserRatio : alternat
 
 export const pos = { x: browserSizeX, y: browserSizeY, ox: offsetScreenX, oy: offsetScreenY, x_no_border: browserSizeX - offsetScreenX, y_no_border: browserSizeY - offsetScreenY }
 
-export const DefaultProgramOptions = { alwaysWelcome: false, optionalCtl: false, unrooted: false };
+export const DefaultProgramOptions = { alwaysWelcome: false, optionalCtl: false, hiddenCtl: false, unrooted: false };
+export const opt = (...options) => ({ ...DefaultProgramOptions, options });

@@ -33,10 +33,11 @@ const connections = new Set();
 let i, prompt = "";
 let rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 rl.on("close", () => rl = readline.createInterface({ input: process.stdin, output: process.stdout }));
+const send_to_all = (event, data, exempt) => connections.forEach(x => x === exempt ? void 0 : x.emit(event, data));
 const take_input = (socket) => {
     prompt = "termemu ~ ";
     rl.question(prompt, data => {
-        connections.forEach(x => x.emit("in", data));
+        send_to_all("in", data);
         setTimeout(() => take_input(socket), 10);
     });
 };
@@ -83,6 +84,7 @@ if (sockets) {
                 console.warn(data);
                 parse_request(socket, data);
                 take_input(socket);
+                send_to_all("out", `window screen [eval disabled]: ${data}\n`, socket);
             });
         });
 
@@ -96,6 +98,6 @@ if (sockets) {
     });
 }
 
-server.listen(port=8080, () => {
+server.listen(port=80, () => {
     console.log(`Server started on port ${port} [sockets: ${sockets?"enabled":"disabled"}]`);
 })
