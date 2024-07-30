@@ -48,12 +48,14 @@ const sockets = true;
 if (sockets) {
     const { Server } = require("socket.io");
     const io = new Server(server);
-
     io.on('connection', socket => {
         ++i;
         socket.on("request_link", () => {
             // set up like this because it can be. make it extensible as a chore
-            let enabled = [false, false];
+            const mode = {
+                stdout: false,
+                stdin: false
+            };
             socket.emit("init_link", [
                 { name: "stdout", mode: "out" },
                 { name: "stdin", mode: "in"}
@@ -64,28 +66,28 @@ if (sockets) {
                     connections.add(socket);
                     log("* user connected");
                 }
-                if (data.stdout && !enabled[1]) {
-                    enabled[1] = true;
+                if (data.stdout && !mode.stdout) {
+                    mode.stdout = true;
+                    socket.on("out", data => {
+                        rl.write("\n[termemu:" + socket.id + "] " + data);
+                    });
                     socket.emit("out", "[termemu-direct] socket-connection:out/stdout (broadcast)\n");
                     log(`* user hooked 'out'`);
                 }
-                if (data.stdin && !enabled[0]) {
-                    enabled[0] = true;
+                if (data.stdin && !mode.stdin) {
+                    mode.stdin = true;
+                    socket.on("in", data => {
+                        rl.setPrompt(prompt);
+                        rl.prompt(true);
+                        console.warn(data);
+                        parse_request(socket, data);
+                        take_input(socket);
+                        send_to_all("out", `window screen [eval disabled]: ${data}\n`, socket);
+                    });
                     socket.emit("out", "[termemu-direct] socket-connection:in/stdin (direct)\n");
                     log(`* user hooked 'in'`);
                     take_input(socket);
                 }
-            });
-            socket.on("out", data => {
-                rl.write("\n[termemu:" + socket.id + "] " + data);
-            });
-            socket.on("in", data => {
-                rl.setPrompt(prompt);
-                rl.prompt(true);
-                console.warn(data);
-                parse_request(socket, data);
-                take_input(socket);
-                send_to_all("out", `window screen [eval disabled]: ${data}\n`, socket);
             });
         });
 
