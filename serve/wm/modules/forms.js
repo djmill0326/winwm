@@ -24,7 +24,7 @@ export const create_input = (spec) => wm.Control("input",{
     }
 });
 
-export const create_form = (name, onsubmit, ...inputs) => wm.Control("form_" + name, {
+export const create_form = (name, onsubmit, ...inputs) => wm.Control("form-" + name, {
     children: [],
     init: (ctx) => {
         const root = document.createElement("form");
@@ -33,6 +33,7 @@ export const create_form = (name, onsubmit, ...inputs) => wm.Control("form_" + n
         root.onsubmit = ev => {
             ev.preventDefault();
             onsubmit(ev);
+            console.debug(`[wm-form] submitted form '${name}'`, onsubmit, ev);
         };
 
         inputs.forEach(spec => wm.add(create_input(spec), ctx.control));

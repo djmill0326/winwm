@@ -8,7 +8,7 @@ export const wmid_getref = () => window.wmid && window.wmid.ref ? window.wmid.re
 export const wmid_getprefix = (is_state=false) => is_state ? `ws::${wmid_getref()}::` : `wm::${wmid_getref()}::`;
 export const wmid_wsprefix = () => wmid_getprefix() + "ws";
 
-const create_object = (name, proto) => {
+export const create_object = (name, proto) => {
     proto.name = name;
     return proto;
 };
@@ -293,28 +293,30 @@ export const create_browser = (src="https://wikipedia.com", nip=10, onload=ev=>e
     const browser = create_control("Browser", Control, {
         children: [],
         wait: true,
+        load: () => console.log("failed to defer initialization"),
         init: (ctx) => {
             const root = document.createElement("div");
             root.className = "wm browser panel";
-    
+
+            const loc = localStorage.loc ? localStorage.loc : src;
             add(forms.Form(
                 "browser",
                 ev => {
-                    const url = ev.target[0].value;
-                    ctx.element.querySelector("iframe").src = ev.target[0].value = url.startsWith("http") ? url : "http://" + url;
+                    const url = ev.target[0].value
+                    if (url.length) ctx.element.querySelector("iframe").src = localStorage.loc = ev.target[0].value = url.startsWith("http") ? url : "http://" + url;
                 },
-                { type: "text", placeholder: "Enter URL", id: "browser-url", cls: "grow", value: "https://wikipedia.com" },
+                { type: "text", placeholder: "Enter URL", id: "browser-url", cls: "grow", value: loc },
                 { type: "submit", value: "🔎︎" }
             ), ctx.control);
 
-            add(create_frame("BrowserFrame", src, pos.x_no_border, pos.y_no_border, nip, false, onload), ctx.control);
+            add(create_frame("BrowserFrame", loc, pos.x_no_border, pos.y_no_border, nip, false, onload), ctx.control);
 
             ctx.element = root;
             ctx.root.append(root);
         }
     }, true);
 
-    load("forms", () => browser.continue());
+    load("forms", () => setTimeout(() => browser.load(), 0));
     return browser;
 };
 

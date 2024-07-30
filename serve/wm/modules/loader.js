@@ -1,9 +1,11 @@
 const header = "// module. count:";
 window.injected = new Set();
 
+const d = (f, t) => setTimeout(f, t);
+
 export const load = (name, cb=()=>{}, force=false) => {
     if (!force && window.injected.has(name)) {
-        cb(window[name]);
+        d(cb(window[name]));
         return;
     };
     fetch(`${location.origin}/wm/modules/${name}.js`).then(res => res.text()).then(text => {
@@ -24,7 +26,7 @@ ${text}`;
             document.head.append(script);
             console.info(`[wmoduloader] Loaded module '${name}'\n`);
             console.debug(script.innerHTML);
-            const wait = () => (!window[name] || Object.keys(window[name]).length < expected) ? setTimeout(wait, 0) : cb(window[name]);
+            const wait = () => (!window[name] || Object.keys(window[name]).length < expected) ? d(wait, 50) : d(cb(window[name]));
             wait();
         } else throw new Error("malformed header");
     }).catch(err => {

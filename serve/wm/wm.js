@@ -61,6 +61,7 @@ const init_children = (ctx) => {
 };
 
 export const run = (ctx, minimized) => {
+    console.debug(`[run-ctx:${ctx.name}]`, ctx);
     if(ctx.element) ctx.element = void 0;
     try {
         const load = () => {
@@ -75,7 +76,7 @@ export const run = (ctx, minimized) => {
                 if (window.wm.wm_bar) window.wm.wm_bar.control.add(name);
             }
         };
-        if (ctx.control.wait) ctx.control.continue = load;
+        if (ctx.control.wait) ctx.control.load = load;
         else load();
     } catch (err) {
         alert(`Failed to initialize '${ctx.name}'\nProgram may be in incomplete/unrecoverable state.\nTry clearing LocalStorage.\nLog information is available in DevTools/Inspect Element Console.`);
